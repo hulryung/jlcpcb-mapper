@@ -1,5 +1,4 @@
-from pathlib import Path
-from jlcpcb_mapper.config import load_config, Config
+from jlcpcb_mapper.config import load_config
 
 def test_load_config_applies_defaults(tmp_path):
     (tmp_path / "jlcpcb-mapper.yaml").write_text("")  # empty
