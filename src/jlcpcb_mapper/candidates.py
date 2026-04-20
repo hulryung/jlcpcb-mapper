@@ -3,19 +3,45 @@ import re
 from .parts_db import PartsDB, PartRow
 from .grouper import GroupKey
 
+
+def _resistor_si_pattern(value: str) -> str | None:
+    """Turn '0Ω' / '1000Ω' / '4700Ω' / '1000000Ω' into ' 0Ω' / ' 1kΩ' etc."""
+    if value == "0Ω":
+        return " 0Ω"
+    m = re.match(r"(\d+(?:\.\d+)?)Ω$", value)
+    if not m:
+        return None
+    n = float(m.group(1))
+    if n >= 1_000_000:
+        q = n / 1_000_000
+        unit = "MΩ"
+    elif n >= 1000:
+        q = n / 1000
+        unit = "kΩ"
+    else:
+        q = n
+        unit = "Ω"
+    if q == int(q):
+        token = f"{int(q)}{unit}"
+    else:
+        # Drop trailing zeros: 4.70 -> 4.7
+        token = f"{q:g}{unit}"
+    return f" {token}"
+
+
 def _value_to_sql_pattern(category: str, value: str) -> str | None:
     if category == "resistor":
-        if value == "0Ω":
-            return "%0Ω%"
-        m = re.match(r"(\d+(?:\.\d+)?)Ω", value)
-        if m:
-            return f"%{m.group(1)}%"
-        return None
+        si = _resistor_si_pattern(value)
+        if si is None:
+            return None
+        return f"%{si}%"
     if category == "capacitor":
-        m = re.match(r"(\d+(?:\.\d+)?)(µ|n|p)F", value)
-        if m:
-            return f"%{m.group(1)}{m.group(2)}F%"
-        return None
+        m = re.match(r"(\d+(?:\.\d+)?)(µ|n|p)F$", value)
+        if not m:
+            return None
+        unit_in = m.group(2)
+        unit_out = "u" if unit_in == "µ" else unit_in
+        return f"%{m.group(1)}{unit_out}F%"
     return None
 
 CATEGORY_SQL = {
