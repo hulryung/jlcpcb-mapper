@@ -11,6 +11,17 @@ def test_parse_uart_schematic_finds_empty_footprints():
     assert "R31" in refs
 
 
+def test_schematic_instance_has_on_board_and_in_bom_flags():
+    sch = Schematic.load(FIX / "uart.kicad_sch")
+    insts = sch.instances()
+    assert len(insts) > 0
+    # default true for all in uart fixture
+    assert all(i.on_board for i in insts)
+    # in_bom should be parsed too
+    for i in insts:
+        assert isinstance(i.in_bom, bool)
+
+
 def test_roundtrip_byte_identical(tmp_path):
     src = FIX / "uart.kicad_sch"
     dst = tmp_path / "copy.kicad_sch"

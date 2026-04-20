@@ -2,7 +2,7 @@ from jlcpcb_mapper.grouper import group_instances, GroupKey, Group
 from jlcpcb_mapper.schematic import SymbolInstance
 
 def mk(ref, value, lib_id, footprint="", lcsc="", dnp=False):
-    return SymbolInstance(ref, value, lib_id, footprint, lcsc, dnp, 0, 0)
+    return SymbolInstance(ref, value, lib_id, footprint, lcsc, dnp)
 
 def test_groups_same_value_same_package():
     defaults = {"resistor": {"package": "0402"}, "capacitor": {"package": "0402"}}

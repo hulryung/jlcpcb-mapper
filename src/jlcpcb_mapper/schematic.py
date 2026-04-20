@@ -120,6 +120,8 @@ class SymbolInstance:
     footprint: str
     lcsc: str
     dnp: bool
+    on_board: bool = True
+    in_bom: bool = True
     _block_start: int = 0
     _block_end: int = 0
 
@@ -165,6 +167,8 @@ class Schematic:
             fp = _prop_value(block, "Footprint")
             lcsc = _prop_value(block, "LCSC")
             dnp = "(dnp yes)" in block
+            on_board = "(on_board no)" not in block
+            in_bom = "(in_bom no)" not in block
             inst = SymbolInstance(
                 reference=ref or "?",
                 value=val or "",
@@ -172,6 +176,8 @@ class Schematic:
                 footprint=fp,
                 lcsc=lcsc,
                 dnp=dnp,
+                on_board=on_board,
+                in_bom=in_bom,
                 _block_start=start,
                 _block_end=end,
             )

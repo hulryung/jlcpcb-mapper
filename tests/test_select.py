@@ -5,7 +5,7 @@ from jlcpcb_mapper.parts_db import PartRow
 from jlcpcb_mapper.schematic import SymbolInstance
 
 def mk_inst(ref):
-    return SymbolInstance(ref, "0", "Device:R_Small_US", "", "", False, 0, 0)
+    return SymbolInstance(ref, "0", "Device:R_Small_US", "", "", False)
 
 def test_single_candidate_skips_llm():
     llm = MagicMock()

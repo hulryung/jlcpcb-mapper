@@ -38,6 +38,20 @@ def test_select_targets_fill_lcsc_only(tmp_path):
     # All targets in fill_lcsc_only mode must have empty LCSC
     assert all(t.inst.lcsc == "" for t in targets)
 
+def test_select_targets_includes_dnp_by_default(tmp_path):
+    # pcie_bridge.kicad_sch has 4 DNP parts (in_bom no, dnp yes)
+    src_pcie = FIX / "pcie_bridge.kicad_sch"
+    proj_dir = tmp_path / "proj"
+    proj_dir.mkdir()
+    (proj_dir / "pcie_bridge.kicad_sch").write_bytes(src_pcie.read_bytes())
+    (proj_dir / "pcie_bridge.kicad_pro").write_text("{}")
+    proj = load_project(proj_dir / "pcie_bridge.kicad_pro")
+    # Even with include_dnp=False (old flag), DNP parts must now be included
+    targets = select_targets(proj, fill_lcsc_only=False, include_dnp=False)
+    dnp_refs = [t.inst.reference for t in targets if t.inst.dnp]
+    assert len(dnp_refs) > 0, "DNP parts should be included in targets now"
+
+
 def test_target_carries_schematic_path(tmp_path):
     src = tmp_path / "proj.kicad_sch"
     src.write_bytes((FIX / "uart.kicad_sch").read_bytes())

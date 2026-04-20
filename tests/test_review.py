@@ -6,7 +6,7 @@ from jlcpcb_mapper.parts_db import PartRow
 from jlcpcb_mapper.schematic import SymbolInstance
 
 def mk_sel(category, value, lcsc):
-    inst = SymbolInstance("R1", "0", "Device:R_Small_US", "", "", False, 0, 0)
+    inst = SymbolInstance("R1", "0", "Device:R_Small_US", "", "", False)
     g = Group(GroupKey(category, value, "0402"), [inst])
     return SelectionResult(g, [PartRow(lcsc,"c","","","0402","d",1,0,1,0.0)], lcsc, "ok", True)
 

@@ -26,7 +26,7 @@ def select_targets(
     proj: Project,
     *,
     fill_lcsc_only: bool,
-    include_dnp: bool,
+    include_dnp: bool = True,  # kept for backward-compat; effectively a no-op now
 ) -> list[Target]:
     out: list[Target] = []
     for sch_path in proj.schematics:
@@ -34,8 +34,8 @@ def select_targets(
         for inst in sch.instances():
             if category_from_lib_id(inst.lib_id) == "power":
                 continue
-            if inst.dnp and not include_dnp:
-                continue
+            if not inst.on_board:
+                continue  # literally not on PCB
             if not inst.value:
                 continue
             if fill_lcsc_only:
