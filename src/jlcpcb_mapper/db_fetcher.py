@@ -3,8 +3,15 @@ from pathlib import Path
 import json
 import sqlite3
 import urllib.request
+import urllib.error
 
 _DEFAULT_BASE = "https://yaqwsx.github.io/jlcparts/data/"
+
+
+class _HeadResult:
+    __slots__ = ("status_code",)
+    def __init__(self, status_code: int):
+        self.status_code = status_code
 
 _CREATE_PARTS_SQL = """
 CREATE TABLE IF NOT EXISTS parts (
@@ -21,22 +28,16 @@ CREATE TABLE IF NOT EXISTS parts (
 )
 """
 
-def _head(url: str, timeout: int = 20):
+def _head(url: str, timeout: int = 20) -> _HeadResult:
     """Return an object with .status_code. Uses urllib for HEAD."""
     req = urllib.request.Request(url, method="HEAD")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
-            class _R:
-                status_code = r.status
-            return _R()
+            return _HeadResult(r.status)
     except urllib.error.HTTPError as e:
-        class _R:
-            status_code = e.code
-        return _R()
+        return _HeadResult(e.code)
     except Exception:
-        class _R:
-            status_code = 0
-        return _R()
+        return _HeadResult(0)
 
 
 def probe_chunk_urls(base: str = _DEFAULT_BASE, max_probe: int = 20) -> list[str]:
