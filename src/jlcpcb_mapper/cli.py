@@ -75,37 +75,38 @@ def init(output, force):
 
 
 @main.command("fetch-db")
-@click.option("--output", "output", type=click.Path(dir_okay=False),
-              default=None,
-              help="Output parts.db path. Defaults to the config's parts_db setting or an auto-detected location.")
-@click.option("--cache-dir", "cache_dir", type=click.Path(file_okay=False),
-              default=None, help="Where to keep downloaded zip chunks (for resume).")
-@click.option("--config", "config_path", type=click.Path(exists=True, dir_okay=False),
-              default=None)
-def fetch_db(output, cache_dir, config_path):
-    """Download JLCPCB parts data from yaqwsx/jlcparts and build parts.db."""
+@click.option("--output", "output", type=click.Path(dir_okay=False), default=None,
+              help="Output parts.db path. Defaults to the config's parts_db or ~/.cache/jlcpcb-mapper/parts.db.")
+@click.option("--cache-dir", "cache_dir", type=click.Path(file_okay=False), default=None,
+              help="Where to keep downloaded zip chunks (for resume).")
+@click.option("--config", "config_path", type=click.Path(exists=True, dir_okay=False), default=None)
+@click.option("--min-stock", "min_stock", type=int, default=100,
+              help="Minimum stock to include in the output DB (default: 100).")
+@click.option("--keep-cache", is_flag=True, default=False,
+              help="Keep the intermediate cache.sqlite3 after transform.")
+def fetch_db(output, cache_dir, config_path, min_stock, keep_cache):
+    """Download JLCPCB parts data from yaqwsx/jlcparts and build a slim parts.db."""
     from pathlib import Path
     from .config import load_config
     from .db_fetcher import build_parts_db_from_cache
 
-    if config_path:
-        cfg = load_config(Path(config_path))
-    else:
-        cfg = None
-
+    cfg = load_config(Path(config_path)) if config_path else None
     if output:
         out_db = Path(output)
     elif cfg and cfg.parts_db:
         out_db = Path(cfg.parts_db)
     else:
-        # Default: XDG-ish cache
         out_db = Path.home() / ".cache" / "jlcpcb-mapper" / "parts.db"
     out_db.parent.mkdir(parents=True, exist_ok=True)
-
     cdir = Path(cache_dir) if cache_dir else out_db.parent / "chunks"
 
     click.echo(f"Target parts.db: {out_db}")
     click.echo(f"Cache dir:       {cdir}")
-    click.echo("This will download several hundred MB and may take a while...")
-    result = build_parts_db_from_cache(out_db=out_db, cache_dir=cdir)
-    click.echo(f"built {result}")
+    click.echo(f"Min stock:       {min_stock}")
+    click.echo("Downloading ~1GB of split-zip chunks and building slim DB…")
+    result = build_parts_db_from_cache(
+        out_db=out_db, cache_dir=cdir,
+        min_stock=min_stock, keep_cache=keep_cache,
+    )
+    size_mb = result.stat().st_size / (1024 * 1024)
+    click.echo(f"✓ built {result} ({size_mb:.1f} MB)")
