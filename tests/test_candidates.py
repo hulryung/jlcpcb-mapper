@@ -105,3 +105,51 @@ def test_candidates_match_real_description_formats(tmp_path):
     # 2.2µF should match "2.2uF" in description
     r = candidates_for(GroupKey("capacitor","2.2µF","0402"), db, min_stock=1000, limit=10)
     assert any(x.lcsc == "C12530" for x in r), "2.2uF not found for 2.2µF query"
+
+
+def test_unsupported_categories_return_empty(tmp_path):
+    """crystal, polarized_capacitor, connector_2xN should yield [] (safer than bad mapping)."""
+    import sqlite3
+    p = tmp_path / "parts.db"
+    conn = sqlite3.connect(str(p))
+    conn.execute("""CREATE TABLE parts (
+        lcsc TEXT PRIMARY KEY, category TEXT, mfr TEXT, mfr_part TEXT,
+        package TEXT, description TEXT, basic INTEGER, preferred INTEGER,
+        stock INTEGER, price REAL
+    )""")
+    conn.execute(
+        "INSERT INTO parts VALUES ('C1','x','m','mp','0402','desc',1,0,100000,0.001)"
+    )
+    conn.commit(); conn.close()
+
+    from jlcpcb_mapper.parts_db import PartsDB
+    from jlcpcb_mapper.candidates import candidates_for
+    from jlcpcb_mapper.grouper import GroupKey
+    db = PartsDB(p)
+    for cat in ["crystal", "polarized_capacitor", "connector_2x4", "connector_2x10"]:
+        key = GroupKey(cat, "any", "")
+        assert candidates_for(key, db, min_stock=0, limit=30) == [], f"{cat} should return empty"
+
+def test_inductor_candidate_pattern(tmp_path):
+    import sqlite3
+    p = tmp_path / "parts.db"
+    conn = sqlite3.connect(str(p))
+    conn.execute("""CREATE TABLE parts (
+        lcsc TEXT PRIMARY KEY, category TEXT, mfr TEXT, mfr_part TEXT,
+        package TEXT, description TEXT, basic INTEGER, preferred INTEGER,
+        stock INTEGER, price REAL
+    )""")
+    conn.executemany("INSERT INTO parts VALUES (?,?,?,?,?,?,?,?,?,?)", [
+        ("C1234","Inductors","Sunlord","MPN1","0603","33uH 20% 0603 Inductor",1,0,10000,0.01),
+        ("C9999","Capacitors (MLCC)","X","Y","0402","22uF 25V X5R 0402",1,0,10000,0.01),
+    ])
+    conn.commit(); conn.close()
+
+    from jlcpcb_mapper.parts_db import PartsDB
+    from jlcpcb_mapper.candidates import candidates_for
+    from jlcpcb_mapper.grouper import GroupKey
+    db = PartsDB(p)
+    rows = candidates_for(GroupKey("inductor","33µH",""), db, min_stock=0, limit=30)
+    lcscs = [r.lcsc for r in rows]
+    assert "C1234" in lcscs
+    assert "C9999" not in lcscs

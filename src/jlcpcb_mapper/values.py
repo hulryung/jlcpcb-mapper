@@ -4,12 +4,17 @@ import re
 _R_RE = re.compile(r"^(\d+(?:\.\d+)?)(?:([KkMm])|R)?$")
 _C_RE = re.compile(r"^(\d+(?:\.\d+)?)\s*([munpµ]?)[Ff]?$", re.IGNORECASE)
 _C_IMPLICIT = re.compile(r"^(\d+)u(\d+)$")  # e.g. 2u2 -> 2.2uF
+_L_RE = re.compile(r"^(\d+(?:\.\d+)?)\s*([munpµ]?)H$", re.IGNORECASE)
 
 def _r_mult(suffix: str) -> int:
     return {"K": 1000, "k": 1000, "M": 1_000_000, "m": 1_000_000, "": 1}[suffix or ""]
 
 def normalize_value(raw: str, category: str) -> str:
     raw = raw.strip()
+    # Take the first slash-separated token — users write "0/F/1005",
+    # "330uF/10V" etc. Only the first token is the primary value.
+    if "/" in raw:
+        raw = raw.split("/", 1)[0].strip()
     if category == "resistor":
         if raw in ("0", "0R", "0Ω"):
             return "0Ω"
@@ -30,11 +35,24 @@ def normalize_value(raw: str, category: str) -> str:
             unit = m.group(2).lower().replace("u", "µ")
             return f"{num}{unit}F" if unit else f"{num}F"
         return raw
+    if category == "inductor":
+        m = _L_RE.match(raw)
+        if m:
+            num = m.group(1)
+            unit = m.group(2).lower().replace("u", "µ")
+            return f"{num}{unit}H" if unit else f"{num}H"
+        return raw
     return raw
 
 def category_from_lib_id(lib_id: str) -> str:
     if lib_id.startswith("power:"):
         return "power"
+    if lib_id == "Device:Crystal" or lib_id.startswith("Device:Crystal_"):
+        return "crystal"
+    if lib_id == "Device:L" or lib_id.startswith("Device:L_"):
+        return "inductor"
+    if lib_id == "Device:C_Polarized" or lib_id.startswith("Device:C_Polarized_"):
+        return "polarized_capacitor"
     if lib_id == "Device:R" or lib_id.startswith("Device:R_"):
         return "resistor"
     if lib_id == "Device:C" or lib_id.startswith("Device:C_"):
@@ -43,8 +61,14 @@ def category_from_lib_id(lib_id: str) -> str:
         return "led"
     if lib_id.startswith("Connector_Generic:Conn_01x"):
         try:
-            pins = int(lib_id.rsplit("Conn_01x", 1)[1])
+            pins = int(lib_id.rsplit("Conn_01x", 1)[1].split("_")[0])
             return f"connector_1x{pins}"
+        except Exception:
+            return "connector"
+    if lib_id.startswith("Connector_Generic:Conn_02x"):
+        try:
+            pins = int(lib_id.rsplit("Conn_02x", 1)[1].split("_")[0])
+            return f"connector_2x{pins}"
         except Exception:
             return "connector"
     if lib_id.startswith("Connector"):
