@@ -38,13 +38,25 @@ def map(project, config_path, non_interactive, force, allow_stale_db,
 
 @main.command()
 @click.argument("project", type=click.Path(exists=True, dir_okay=False))
-@click.option("--config", type=click.Path(exists=True, dir_okay=False))
+@click.option("--config", "config_path", type=click.Path(exists=True, dir_okay=False))
 @click.option("--non-interactive", is_flag=True)
 @click.option("--force", is_flag=True)
 @click.option("--allow-stale-db", is_flag=True)
-def verify(project, **kwargs):
+def verify(project, config_path, non_interactive, force, allow_stale_db):
     """Re-check existing mappings against current DB."""
-    click.echo(f"verify: {project}")
+    from pathlib import Path
+    from .commands.verify_cmd import run_verify
+    from .config import load_config
+    cfg_path = Path(config_path) if config_path else Path(project).parent / "jlcpcb-mapper.yaml"
+    cfg = load_config(cfg_path)
+    report = run_verify(
+        project_pro=Path(project),
+        config=cfg,
+        non_interactive=non_interactive,
+        force=force,
+        allow_stale_db=allow_stale_db,
+    )
+    click.echo(report.to_text())
 
 
 @main.command()
