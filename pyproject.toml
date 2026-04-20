@@ -1,0 +1,30 @@
+[project]
+name = "jlcpcb-mapper"
+version = "0.1.0"
+description = "LLM-assisted JLCPCB part mapping for KiCad schematics"
+requires-python = ">=3.11"
+dependencies = [
+  "kiutils>=1.4.8",
+  "pyyaml>=6.0",
+  "click>=8.1",
+  "rich>=13.7",
+  "easyeda2kicad>=0.8",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-mock>=3.12"]
+
+[project.scripts]
+jlcpcb-mapper = "jlcpcb_mapper.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jlcpcb_mapper"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
+markers = ["live: hits real network/LLM (excluded by default)"]
