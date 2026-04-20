@@ -1,0 +1,31 @@
+parts_db: null  # auto-detect per platform
+llm:
+  model: claude-haiku-4-5
+  concurrency: 4
+  timeout_seconds: 60
+  retry_on_parse_fail: 1
+selection:
+  prefer_order: [basic, preferred, extended]
+  min_stock: 1000
+  defaults:
+    resistor:
+      package: "0402"
+      tolerance: "1%"
+      power: "1/16W"
+    capacitor:
+      package: "0402"
+      voltage_min: 10
+      dielectric_prefer: [X7R, X5R]
+    led:
+      package: "0603"
+verify:
+  min_stock_warning: 1000
+  price_change_pct_warning: 30
+download:
+  output_dir: libs/lcsc
+  download_3d_models: false
+  auto_register_fp_lib_table: true
+kicad_footprint_map_overrides: {}
+hints: |
+  - Prefer Basic parts with high stock.
+  - Avoid parts with stock < 10000 (EOL risk).

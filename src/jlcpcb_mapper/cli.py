@@ -32,6 +32,15 @@ def verify(project, **kwargs):
 
 
 @main.command()
-def init():
+@click.option("--output", type=click.Path(dir_okay=False), default="jlcpcb-mapper.yaml")
+@click.option("--force", is_flag=True)
+def init(output, force):
     """Scaffold a default jlcpcb-mapper.yaml in the current directory."""
-    click.echo("init")
+    import importlib.resources as resources
+    from pathlib import Path
+    out = Path(output)
+    if out.exists() and not force:
+        raise click.ClickException(f"{out} exists; use --force to overwrite")
+    text = resources.files("jlcpcb_mapper").joinpath("default_config.yaml").read_text()
+    out.write_text(text)
+    click.echo(f"wrote {out}")
