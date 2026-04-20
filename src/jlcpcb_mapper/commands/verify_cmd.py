@@ -24,7 +24,7 @@ def run_verify(
     allow_stale_db: bool,
 ) -> RunReport:
     proj = load_project(project_pro)
-    parts_db_path = Path(config.parts_db) if config.parts_db else _autodetect_parts_db()
+    parts_db_path = Path(config.parts_db).expanduser() if config.parts_db else _autodetect_parts_db()
     run_preflight(
         proj.schematics, parts_db_path,
         force=force, allow_stale_db=allow_stale_db,

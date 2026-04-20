@@ -74,7 +74,7 @@ def run_map(
     apply_suggestions: bool,
 ) -> RunReport:
     proj = load_project(project_pro)
-    parts_db_path = Path(config.parts_db) if config.parts_db else _autodetect_parts_db()
+    parts_db_path = Path(config.parts_db).expanduser() if config.parts_db else _autodetect_parts_db()
 
     run_preflight(
         schematics=proj.schematics,
