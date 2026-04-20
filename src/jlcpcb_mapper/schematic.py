@@ -213,3 +213,24 @@ class Schematic:
                 other._block_start += delta
                 other._block_end += delta
             # Blocks before inst are unaffected
+
+
+import os
+import shutil as _shutil
+from typing import Callable
+
+def atomic_update(path, mutate_fn: "Callable[[Schematic], None]", backup_dir) -> None:
+    """Backup then atomically update a schematic file.
+
+    1. Copies the original to backup_dir/<original_name>.
+    2. Loads the schematic, applies mutate_fn(sch), writes to .tmp, os.replace.
+    """
+    path = Path(path)
+    backup_dir = Path(backup_dir)
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    _shutil.copy2(str(path), str(backup_dir / path.name))
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    sch = Schematic.load(path)
+    mutate_fn(sch)
+    sch.save(tmp)
+    os.replace(str(tmp), str(path))
