@@ -35,11 +35,11 @@ def normalize_value(raw: str, category: str) -> str:
 def category_from_lib_id(lib_id: str) -> str:
     if lib_id.startswith("power:"):
         return "power"
-    if lib_id.startswith("Device:R"):
+    if lib_id == "Device:R" or lib_id.startswith("Device:R_"):
         return "resistor"
-    if lib_id.startswith("Device:C"):
+    if lib_id == "Device:C" or lib_id.startswith("Device:C_"):
         return "capacitor"
-    if lib_id.startswith("Device:LED"):
+    if lib_id == "Device:LED" or lib_id.startswith("Device:LED_"):
         return "led"
     if lib_id.startswith("Connector_Generic:Conn_01x"):
         try:

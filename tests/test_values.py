@@ -33,6 +33,9 @@ def test_normalize_capacitor(raw, expected):
     ("power:GND",                   "power"),
     ("power:+3.3V",                 "power"),
     ("MCU_Microchip:ATmega328",     "ic"),
+    ("Device:Rotary_Encoder",       "ic"),
+    ("Device:Crystal",              "ic"),
+    ("Device:C_Polarized_Small_US", "capacitor"),
 ])
 def test_category_from_lib_id(lib_id, expected):
     assert category_from_lib_id(lib_id) == expected
