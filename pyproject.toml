@@ -17,6 +17,7 @@ dependencies = [
   "click>=8.1",
   "rich>=13.7",
   "easyeda2kicad>=0.8",
+  "split-file-reader>=0.1.4",
 ]
 
 [project.optional-dependencies]

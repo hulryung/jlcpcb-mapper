@@ -72,3 +72,40 @@ def init(output, force):
     text = resources.files("jlcpcb_mapper").joinpath("default_config.yaml").read_text()
     out.write_text(text)
     click.echo(f"wrote {out}")
+
+
+@main.command("fetch-db")
+@click.option("--output", "output", type=click.Path(dir_okay=False),
+              default=None,
+              help="Output parts.db path. Defaults to the config's parts_db setting or an auto-detected location.")
+@click.option("--cache-dir", "cache_dir", type=click.Path(file_okay=False),
+              default=None, help="Where to keep downloaded zip chunks (for resume).")
+@click.option("--config", "config_path", type=click.Path(exists=True, dir_okay=False),
+              default=None)
+def fetch_db(output, cache_dir, config_path):
+    """Download JLCPCB parts data from yaqwsx/jlcparts and build parts.db."""
+    from pathlib import Path
+    from .config import load_config
+    from .db_fetcher import build_parts_db_from_cache
+
+    if config_path:
+        cfg = load_config(Path(config_path))
+    else:
+        cfg = None
+
+    if output:
+        out_db = Path(output)
+    elif cfg and cfg.parts_db:
+        out_db = Path(cfg.parts_db)
+    else:
+        # Default: XDG-ish cache
+        out_db = Path.home() / ".cache" / "jlcpcb-mapper" / "parts.db"
+    out_db.parent.mkdir(parents=True, exist_ok=True)
+
+    cdir = Path(cache_dir) if cache_dir else out_db.parent / "chunks"
+
+    click.echo(f"Target parts.db: {out_db}")
+    click.echo(f"Cache dir:       {cdir}")
+    click.echo("This will download several hundred MB and may take a while...")
+    result = build_parts_db_from_cache(out_db=out_db, cache_dir=cdir)
+    click.echo(f"built {result}")
