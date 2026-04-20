@@ -8,16 +8,32 @@ def main():
 
 @main.command()
 @click.argument("project", type=click.Path(exists=True, dir_okay=False))
-@click.option("--config", type=click.Path(exists=True, dir_okay=False))
+@click.option("--config", "config_path", type=click.Path(exists=True, dir_okay=False))
 @click.option("--non-interactive", is_flag=True)
 @click.option("--force", is_flag=True)
 @click.option("--allow-stale-db", is_flag=True)
 @click.option("--fill-lcsc-only", is_flag=True)
 @click.option("--include-dnp", is_flag=True)
 @click.option("--apply-2nd-pass-suggestions", "apply_suggestions", is_flag=True)
-def map(project, **kwargs):
+def map(project, config_path, non_interactive, force, allow_stale_db,
+        fill_lcsc_only, include_dnp, apply_suggestions):
     """Map empty-footprint components to JLCPCB parts."""
-    click.echo(f"map: {project}")
+    from pathlib import Path
+    from .commands.map_cmd import run_map
+    from .config import load_config
+    cfg_path = Path(config_path) if config_path else Path(project).parent / "jlcpcb-mapper.yaml"
+    cfg = load_config(cfg_path)
+    report = run_map(
+        project_pro=Path(project),
+        config=cfg,
+        non_interactive=non_interactive,
+        force=force,
+        allow_stale_db=allow_stale_db,
+        fill_lcsc_only=fill_lcsc_only,
+        include_dnp=include_dnp,
+        apply_suggestions=apply_suggestions,
+    )
+    click.echo(report.to_text())
 
 
 @main.command()
