@@ -209,16 +209,17 @@ class Schematic:
         )
         self._text = new_text
 
-        # Update offsets for all live instances so subsequent edits stay valid
+        # Capture the boundary BEFORE mutating anything.
+        threshold = inst._block_end
+        # Update inst's own end.
+        inst._block_end += delta
+        # Shift any later instances by delta.
         for other in self._instances:
             if other is inst:
-                # Extend this block's end by the delta
-                other._block_end += delta
-            elif other._block_start >= inst._block_end:
-                # Shift later blocks
+                continue
+            if other._block_start >= threshold:
                 other._block_start += delta
                 other._block_end += delta
-            # Blocks before inst are unaffected
 
 
 import os

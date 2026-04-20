@@ -26,3 +26,29 @@ def test_atomic_update_nomutation_preserves_bytes(tmp_path):
     # No-op mutation must preserve byte identity
     assert src.read_bytes() == orig
     assert (backup_dir / "uart.kicad_sch").read_bytes() == orig
+
+
+def test_multiple_mutations_preserve_all_offsets(tmp_path):
+    """Bulk-apply LCSC+Footprint to many instances; every one must receive both."""
+    src = tmp_path / "uart.kicad_sch"
+    src.write_bytes((FIX / "uart.kicad_sch").read_bytes())
+    sch = Schematic.load(src)
+    # Pick all resistor instances with empty Footprint
+    targets = [i for i in sch.instances()
+               if i.lib_id.startswith("Device:R") and i.footprint == ""]
+    assert len(targets) >= 5, "fixture expected to have multiple empty resistor instances"
+    for inst in targets:
+        sch.set_lcsc(inst, "C17168")
+        sch.set_footprint(inst, "Resistor_SMD:R_0402_1005Metric")
+    # Write to a new path so we can reload and re-check
+    dst = tmp_path / "out.kicad_sch"
+    sch.save(dst)
+    sch2 = Schematic.load(dst)
+    # Every target ref must now have both LCSC and Footprint set
+    by_ref_new = {i.reference: i for i in sch2.instances()}
+    missing = []
+    for t in targets:
+        i2 = by_ref_new[t.reference]
+        if i2.lcsc != "C17168" or i2.footprint != "Resistor_SMD:R_0402_1005Metric":
+            missing.append((t.reference, i2.lcsc, i2.footprint))
+    assert not missing, f"Mutations lost on {len(missing)} refs: {missing[:10]}"
