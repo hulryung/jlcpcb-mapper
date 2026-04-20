@@ -141,13 +141,13 @@ class Schematic:
         self._instances: list[SymbolInstance] = []
 
     @classmethod
-    def load(cls, path: object) -> "Schematic":
+    def load(cls, path: str | Path) -> "Schematic":
         p = Path(path)
         raw = p.read_bytes()
         obj = cls(p, raw)
         return obj
 
-    def save(self, path: object) -> None:
+    def save(self, path: str | Path) -> None:
         """Write the (possibly modified) schematic.
 
         When no edits have been made, the written bytes are byte-identical
