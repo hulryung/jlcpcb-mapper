@@ -11,7 +11,7 @@ from ..candidates import candidates_for
 from ..llm import ClaudeClient
 from ..select import select_for_groups, SelectionResult
 from ..review import review_mapping, ReviewFlag
-from ..resolver import resolve_footprint
+from ..resolver import resolve_footprint, ResolveResult
 from ..downloader import ensure_fp_lib_table_entry
 from ..schematic import atomic_update
 from ..preflight import run_preflight
@@ -159,19 +159,25 @@ def run_map(
                 detail=f"chosen LCSC {sel.chosen_lcsc} not in candidate list",
             )
             continue
-        resolution = resolve_footprint(
-            category=sel.group.key.category,
-            part=part,
-            out_dir=fp_out_dir,
-            overrides=config.kicad_footprint_map_overrides,
-        )
-        if resolution.downloaded:
-            downloaded_any = True
-        if resolution.download_failed:
-            report.add_failure(
-                kind="footprint_download",
-                detail=f"{sel.chosen_lcsc}: EasyEDA fetch failed",
+        # Skip resolver if all instances already have footprints — no need to download
+        all_have_fp = all(i.footprint for i in sel.group.instances)
+        if all_have_fp:
+            # No need to resolve — existing footprints are preserved.
+            resolution = ResolveResult(footprint="", downloaded=False, download_failed=False)
+        else:
+            resolution = resolve_footprint(
+                category=sel.group.key.category,
+                part=part,
+                out_dir=fp_out_dir,
+                overrides=config.kicad_footprint_map_overrides,
             )
+            if resolution.downloaded:
+                downloaded_any = True
+            if resolution.download_failed:
+                report.add_failure(
+                    kind="footprint_download",
+                    detail=f"{sel.chosen_lcsc}: EasyEDA fetch failed",
+                )
 
         report.add_group_result(
             group_label=f"{sel.group.key.category} {sel.group.key.value} {sel.group.key.package_hint}".strip(),

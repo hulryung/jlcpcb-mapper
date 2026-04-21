@@ -111,7 +111,11 @@ def candidates_for(
         hint = key.package_hint
         return [r for r in rows if hint.lower() in (r.package or "").lower()]
 
-    if key.category.startswith("connector"):
+    # Plain "connector" without structure info → skip (unsafe without explicit category suffix)
+    if key.category == "connector":
+        return []
+
+    if key.category.startswith("connector_1x"):
         # 1xN connectors: existing looser match — no value filter (value is often a part number,
         # not a description token) so pass value_pattern=None to get broad results.
         return db.query_candidates(

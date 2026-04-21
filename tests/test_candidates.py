@@ -215,3 +215,31 @@ def test_inductor_candidate_pattern(tmp_path):
     lcscs = [r.lcsc for r in rows]
     assert "C1234" in lcscs
     assert "C9999" not in lcscs
+
+
+def test_plain_connector_returns_empty(tmp_path):
+    """Plain 'connector' category (not _1xN / _2xN) returns [] — no fuzzy fallback."""
+    import sqlite3
+    p = tmp_path / "parts.db"
+    conn = sqlite3.connect(str(p))
+    conn.execute("""CREATE TABLE parts (
+        lcsc TEXT PRIMARY KEY, category TEXT, mfr TEXT, mfr_part TEXT,
+        package TEXT, description TEXT, basic INTEGER, preferred INTEGER,
+        stock INTEGER, price REAL
+    )""")
+    conn.execute(
+        "INSERT INTO parts VALUES ('C398543','Connectors','JST','MPN','Generic','2mm Pin Header',0,0,100000,0.1)"
+    )
+    conn.commit(); conn.close()
+
+    from jlcpcb_mapper.parts_db import PartsDB
+    from jlcpcb_mapper.candidates import candidates_for
+    from jlcpcb_mapper.grouper import GroupKey
+
+    db = PartsDB(p)
+    # Plain "connector" (not _1x / _2x) must return []
+    assert candidates_for(GroupKey("connector", "USB_C_Receptacle_USB2.0_14P", ""), db, min_stock=0, limit=30) == []
+    assert candidates_for(GroupKey("connector", "Barrel_Jack", ""), db, min_stock=0, limit=30) == []
+    # connector_1xN still works (via loose fallback)
+    rows = candidates_for(GroupKey("connector_1x2", "2mm Pin Header", ""), db, min_stock=0, limit=30)
+    assert len(rows) >= 1
