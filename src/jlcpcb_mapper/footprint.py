@@ -1,12 +1,13 @@
 """Extract JLCPCB-style package codes from KiCad footprint identifiers."""
 from __future__ import annotations
 import re
+from typing import Callable
 
 # Ordered list of (pattern, extractor) pairs.
 # Each pattern matches the full footprint string; the extractor returns the package string.
 # Falls through to None if nothing matches.
 
-_RULES: list[tuple[re.Pattern, callable]] = []
+_RULES: list[tuple[re.Pattern, Callable[[re.Match], str]]] = []
 
 
 def _rule(pattern: str):
