@@ -186,8 +186,9 @@ def run_map(
             sch_path = ref_to_sch.get(inst.reference)
             if sch_path is None:
                 continue
+            fp_to_write = "" if inst.footprint else resolution.footprint
             edits_by_sch[sch_path].append(
-                (inst.reference, sel.chosen_lcsc, resolution.footprint)
+                (inst.reference, sel.chosen_lcsc, fp_to_write)
             )
 
     # Register LCSC fp-lib if we downloaded at least one footprint
