@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from .schematic import SymbolInstance
 from .values import normalize_value, category_from_lib_id
+from .footprint import package_from_kicad_footprint
 
 @dataclass(frozen=True)
 class GroupKey:
@@ -28,7 +29,10 @@ def group_instances(
         if cat == "power":
             continue
         val = normalize_value(inst.value, cat)
-        pkg = _package_hint(cat, category_defaults)
+        # Footprint-derived package hint takes precedence over config default
+        pkg = package_from_kicad_footprint(inst.footprint) if inst.footprint else None
+        if not pkg:
+            pkg = _package_hint(cat, category_defaults)
         key = GroupKey(category=cat, value=val, package_hint=pkg)
         g = buckets.setdefault(key, Group(key=key))
         g.instances.append(inst)

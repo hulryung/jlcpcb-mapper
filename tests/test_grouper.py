@@ -36,3 +36,19 @@ def test_connector_grouping_by_pin_count():
     groups = group_instances(insts, {})
     cats = sorted({g.key.category for g in groups})
     assert cats == ["connector_1x1", "connector_1x6"]
+
+
+def test_footprint_package_overrides_default():
+    """An instance with existing footprint should use THAT package as hint, not the config default."""
+    defaults = {"resistor": {"package": "0402"}}  # default
+    insts = [
+        # R15: 10K, footprint already set to 0603 (not default)
+        mk("R15", "10K", "Device:R_Small_US", "Resistor_SMD:R_0603_1608Metric"),
+        # R20: 10K, footprint empty → should use default "0402"
+        mk("R20", "10K", "Device:R_Small_US", ""),
+    ]
+    groups = group_instances(insts, defaults)
+    # Two groups because different package hints
+    assert len(groups) == 2
+    assert any(g.key.package_hint == "0603" for g in groups)
+    assert any(g.key.package_hint == "0402" for g in groups)

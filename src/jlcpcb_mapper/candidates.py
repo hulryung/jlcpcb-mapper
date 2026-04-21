@@ -5,6 +5,7 @@ from .grouper import GroupKey
 
 # Categories that are safer to skip entirely than to mismap.
 # Callers will see failure_reason="no candidates" and can assign manually.
+# NOTE: These are only skipped when package_hint is empty; see candidates_for logic below.
 _UNSUPPORTED = {"crystal", "polarized_capacitor"}
 
 
@@ -58,6 +59,13 @@ def _value_to_sql_pattern(category: str, value: str) -> str | None:
         return f"%{m.group(1)}{unit_out}F%"
     return None
 
+
+def _mpn_search_pattern(value: str) -> str:
+    """Escape % and _ for LIKE; return '%<value>%'."""
+    escaped = value.replace("%", r"\%").replace("_", r"\_")
+    return f"%{escaped}%"
+
+
 CATEGORY_SQL = {
     "resistor":  "Chip Resistor%",
     "capacitor": "%Ceramic Capacitor%",
@@ -71,18 +79,46 @@ def candidates_for(
     min_stock: int,
     limit: int = 30,
 ) -> list[PartRow]:
+    # Previously unconditionally skipped categories — now gated on package_hint
     if key.category in _UNSUPPORTED:
-        return []
-    if key.category.startswith("connector_2x"):
-        return []  # 2xN connectors are diverse; safer to skip than mismap
-    if key.category.startswith("connector"):
-        return db.query_candidates(
-            category_sql_like="%Connector%",
-            package=None,
-            value_pattern=None,
-            min_stock=0,
+        if not key.package_hint:
+            return []  # no hint → can't narrow → safer to skip
+        cat_sql = {
+            "crystal":             "%Crystal%",
+            "polarized_capacitor": "%Aluminum Electrolytic%",
+        }.get(key.category, "%")
+        # Fetch broadly, then filter client-side by package hint substring
+        rows = db.query_candidates(
+            category_sql_like=cat_sql,
+            package=None,  # don't use exact match — use LIKE client-side
+            value_pattern=_mpn_search_pattern(key.value) if key.value else None,
+            min_stock=min_stock,
             limit=max(limit, 50),
         )
+        hint = key.package_hint
+        return [r for r in rows if hint.lower() in (r.package or "").lower()]
+
+    if key.category.startswith("connector_2x"):
+        if not key.package_hint:
+            return []  # 2xN connectors are diverse; safer to skip than mismap
+        rows = db.query_candidates(
+            category_sql_like="%Connector%",
+            package=None,
+            value_pattern=_mpn_search_pattern(key.value) if key.value else None,
+            min_stock=min_stock,
+            limit=max(limit, 50),
+        )
+        hint = key.package_hint
+        return [r for r in rows if hint.lower() in (r.package or "").lower()]
+
+    if key.category.startswith("connector"):
+        # 1xN connectors: existing looser match — no value filter (value is often a part number,
+        # not a description token) so pass value_pattern=None to get broad results.
+        return db.query_candidates(
+            category_sql_like="%Connector%", package=None,
+            value_pattern=None, min_stock=0, limit=max(limit, 50),
+        )
+
     if key.category == "inductor":
         pattern = _inductor_pattern(key.value)
         return db.query_candidates(
@@ -92,13 +128,27 @@ def candidates_for(
             min_stock=min_stock,
             limit=limit,
         )
+
+    if key.category == "ic":
+        # MPN-based search. Value is typically the MPN (e.g., "AO3400A", "LM2596S-3.3").
+        # Require a footprint package hint or bail.
+        # Note: MPN lives in mfr_part column in the JLCPCB DB, not in description.
+        if not key.package_hint:
+            return []
+        return db.query_candidates(
+            category_sql_like="%",  # all categories
+            package=None,
+            value_pattern=None,
+            mpn_pattern=_mpn_search_pattern(key.value) if key.value else None,
+            min_stock=min_stock,
+            limit=max(limit, 50),
+        )
+
+    # Existing path for resistor/capacitor/led
     cat_sql = CATEGORY_SQL.get(key.category, "%")
     pkg = key.package_hint or None
     value_pattern = _value_to_sql_pattern(key.category, key.value)
     return db.query_candidates(
-        category_sql_like=cat_sql,
-        package=pkg,
-        value_pattern=value_pattern,
-        min_stock=min_stock,
-        limit=limit,
+        category_sql_like=cat_sql, package=pkg,
+        value_pattern=value_pattern, min_stock=min_stock, limit=limit,
     )

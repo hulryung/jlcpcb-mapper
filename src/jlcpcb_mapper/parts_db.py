@@ -36,6 +36,7 @@ class PartsDB:
         value_pattern: str | None,
         min_stock: int,
         limit: int = 30,
+        mpn_pattern: str | None = None,
     ) -> list[PartRow]:
         clauses = ["category LIKE ?"]
         args: list = [category_sql_like]
@@ -43,6 +44,8 @@ class PartsDB:
             clauses.append("package = ?"); args.append(package)
         if value_pattern:
             clauses.append("description LIKE ?"); args.append(value_pattern)
+        if mpn_pattern:
+            clauses.append("mfr_part LIKE ?"); args.append(mpn_pattern)
         clauses.append("stock >= ?"); args.append(min_stock)
         sql = (
             f"SELECT {COLS} FROM parts WHERE {' AND '.join(clauses)} "

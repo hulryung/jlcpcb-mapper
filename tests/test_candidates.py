@@ -130,6 +130,68 @@ def test_unsupported_categories_return_empty(tmp_path):
         key = GroupKey(cat, "any", "")
         assert candidates_for(key, db, min_stock=0, limit=30) == [], f"{cat} should return empty"
 
+def test_crystal_with_package_hint_returns_candidates(tmp_path):
+    import sqlite3
+    p = tmp_path / "parts.db"
+    conn = sqlite3.connect(str(p))
+    conn.execute("""CREATE TABLE parts (
+        lcsc TEXT PRIMARY KEY, category TEXT, mfr TEXT, mfr_part TEXT,
+        package TEXT, description TEXT, basic INTEGER, preferred INTEGER,
+        stock INTEGER, price REAL
+    )""")
+    conn.executemany("INSERT INTO parts VALUES (?,?,?,?,?,?,?,?,?,?)", [
+        ("C9006","Crystals","Yangxing","X25M-3225","SMD3225-4P",
+         "-40℃~+85℃ 12pF 25MHz Crystal Oscillator ±10ppm ±20ppm SMD3225-4P",1,0,400000,0.10),
+        ("C13740","Crystals","Yangxing","X25M-3225-20p","SMD3225-4P",
+         "-40℃~+85℃ 20pF 25MHz Crystal Oscillator ±10ppm ±20ppm SMD3225-4P",0,0,100000,0.10),
+    ])
+    conn.commit(); conn.close()
+
+    from jlcpcb_mapper.parts_db import PartsDB
+    from jlcpcb_mapper.candidates import candidates_for
+    from jlcpcb_mapper.grouper import GroupKey
+
+    db = PartsDB(p)
+    # Without hint → empty (safe skip)
+    assert candidates_for(GroupKey("crystal","25MHz",""), db, min_stock=0, limit=30) == []
+    # With hint "3225" → finds candidates
+    rows = candidates_for(GroupKey("crystal","25MHz","3225"), db, min_stock=0, limit=30)
+    assert any(r.lcsc == "C9006" for r in rows)
+
+
+def test_ic_with_package_hint_mpn_search(tmp_path):
+    """IC search uses mfr_part column for MPN matching (not description)."""
+    import sqlite3
+    p = tmp_path / "parts.db"
+    conn = sqlite3.connect(str(p))
+    conn.execute("""CREATE TABLE parts (
+        lcsc TEXT PRIMARY KEY, category TEXT, mfr TEXT, mfr_part TEXT,
+        package TEXT, description TEXT, basic INTEGER, preferred INTEGER,
+        stock INTEGER, price REAL
+    )""")
+    conn.executemany("INSERT INTO parts VALUES (?,?,?,?,?,?,?,?,?,?)", [
+        # MPN only in mfr_part — description has electrical specs, not the part number.
+        # This is the real-world shape of the JLCPCB parts DB.
+        ("C20917","MOSFET","Alpha Omega","AO3400A","SOT-23-3L",
+         "-55℃~+150℃ 1 N-channel 1.45V 1.4W 30V 48mΩ@2.5V 5.7A SOT-23",1,0,500000,0.03),
+        # A different part whose mfr_part does NOT match AO3400A exactly
+        ("C99999","MOSFET","Alpha Omega","AO3401","SOT-23",
+         "-55℃~+150℃ 1 N-channel some other specs",0,0,10000,0.05),
+    ])
+    conn.commit(); conn.close()
+
+    from jlcpcb_mapper.parts_db import PartsDB
+    from jlcpcb_mapper.candidates import candidates_for
+    from jlcpcb_mapper.grouper import GroupKey
+
+    db = PartsDB(p)
+    # IC without hint → empty
+    assert candidates_for(GroupKey("ic","AO3400A",""), db, min_stock=0, limit=30) == []
+    # IC with hint → MPN match via mfr_part column
+    rows = candidates_for(GroupKey("ic","AO3400A","SOT-23"), db, min_stock=0, limit=30)
+    assert any(r.lcsc == "C20917" for r in rows)
+
+
 def test_inductor_candidate_pattern(tmp_path):
     import sqlite3
     p = tmp_path / "parts.db"
