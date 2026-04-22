@@ -19,7 +19,7 @@ def _parse_cap_value(token: str) -> Value | None:
         return None
     mag = float(m.group(1))
     unit_in = m.group(2).lower()
-    unit_in = "µ" if unit_in in ("u", "µ") else unit_in
+    unit_in = "µ" if unit_in in ("u", "µ", "μ") else unit_in
     if unit_in == "":
         return Value(mag, "F")
     return Value(mag, f"{unit_in}F")

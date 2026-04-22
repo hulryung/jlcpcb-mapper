@@ -33,3 +33,14 @@ def test_parse_none_on_junk():
     p = CapValueParser(keep_voltage=False)
     assert p.parse("foobar") is None
     assert p.parse("") is None
+
+def test_ceramic_normalizes_greek_mu_to_micro_sign():
+    # Greek mu (U+03BC) should canonicalize to micro sign (U+00B5).
+    p = CapValueParser(keep_voltage=False)
+    greek = p.parse("10μF")     # GREEK SMALL LETTER MU
+    micro = p.parse("10µF")     # MICRO SIGN
+    ascii_u = p.parse("10uF")
+    assert greek == micro == ascii_u
+    assert greek is not None
+    assert greek.value.unit == "µ" + "F"  # unit starts with micro sign (U+00B5)
+    assert ord(greek.value.unit[0]) == 0x00B5
