@@ -1364,6 +1364,16 @@ git commit -m "feat(components): CapPromptHook with voltage-aware criteria"
 
 ### Task 13: Wire `POLARIZED_CAP` Category and pipeline skeleton; integration test for 220µF/10V
 
+**Carry-over from Task 9 review**: `PolarizedCapSource.query` sends `%220uF%` (ASCII `u`) to the DB. If real `parts.db` descriptions use Unicode µ (U+00B5) or Greek mu (U+03BC), rows will silently miss. Before declaring Task 13 acceptance, run a quick probe against the user's actual `parts.db`:
+```sql
+SELECT DISTINCT substr(description, instr(description,'uF')-6, 8) FROM parts
+WHERE category LIKE '%Aluminum Electrolytic%' AND description LIKE '%uF%' LIMIT 5;
+SELECT count(*) FROM parts WHERE description LIKE '%µF%';
+SELECT count(*) FROM parts WHERE description LIKE '%μF%';
+```
+If Unicode variants appear, extend `PolarizedCapSource.query` to emit multiple patterns with OR via a new `description_or_patterns` field on `QuerySpec` — but defer that change until evidence requires it.
+
+
 **Files:**
 - Create: `src/jlcpcb_mapper/categories/polarized_cap.py`
 - Modify: `src/jlcpcb_mapper/categories/__init__.py` — register built-in categories
