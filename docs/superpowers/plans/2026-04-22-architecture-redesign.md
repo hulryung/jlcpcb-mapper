@@ -1838,6 +1838,10 @@ RESISTOR_BUILTIN = {
 - Create: `src/jlcpcb_mapper/observability/writer.py`
 - Test: `tests/observability/test_writer.py`
 
+**Constraints carried over from Task 3:**
+- `TraceEvent.timestamp_ms` is `int(time.monotonic() * 1000)` — monotonic, process-relative, not wall-clock. Two events recorded in the same millisecond will collide. The writer MUST preserve `Trace.events` list order and MUST NOT sort by `timestamp_ms`.
+- If a human-readable time anchor is ever needed in `groups.jsonl`, record a single `run_started_at` wall-clock time at pipeline startup (pipeline's responsibility, not `Trace`'s).
+
 - [ ] **Step 1: Test**
 
 `tests/observability/test_writer.py`:
