@@ -66,7 +66,7 @@ class PartsDB:
         for pat in q.description_patterns:
             clauses.append("description LIKE ?"); args.append(pat)
         for pat in q.mpn_patterns:
-            clauses.append("mfr_part LIKE ?"); args.append(pat)
+            clauses.append("mfr_part LIKE ? ESCAPE '\\'"); args.append(pat)
         clauses.append("stock >= ?"); args.append(q.min_stock)
         sql = (
             f"SELECT {COLS} FROM parts WHERE {' AND '.join(clauses)} "
