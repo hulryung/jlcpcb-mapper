@@ -98,7 +98,7 @@ git commit -m "feat(core): add Value dataclass for magnitude/unit pairs"
 
 ---
 
-### Task 2: `QuerySpec`, `Spec` protocol, `PartRow` re-export in `core/types.py`
+### Task 2: `QuerySpec` and `Spec` protocol in `core/types.py`
 
 **Files:**
 - Modify: `src/jlcpcb_mapper/core/types.py`
