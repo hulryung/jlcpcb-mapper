@@ -54,3 +54,24 @@ class PartsDB:
         args.append(limit)
         cur = self._conn.execute(sql, args)
         return [PartRow(**dict(r)) for r in cur.fetchall()]
+
+    def execute(self, q) -> list["PartRow"]:
+        """Run a QuerySpec against parts.db. Added during architecture migration."""
+        from .core.types import QuerySpec  # local import to avoid cycles
+        assert isinstance(q, QuerySpec), f"expected QuerySpec, got {type(q).__name__}"
+        clauses: list[str] = ["category LIKE ?"]
+        args: list = [q.category_like]
+        if q.package is not None:
+            clauses.append("package = ?"); args.append(q.package)
+        for pat in q.description_patterns:
+            clauses.append("description LIKE ?"); args.append(pat)
+        for pat in q.mpn_patterns:
+            clauses.append("mfr_part LIKE ?"); args.append(pat)
+        clauses.append("stock >= ?"); args.append(q.min_stock)
+        sql = (
+            f"SELECT {COLS} FROM parts WHERE {' AND '.join(clauses)} "
+            f"ORDER BY {q.order_by} LIMIT ?"
+        )
+        args.append(q.limit)
+        cur = self._conn.execute(sql, args)
+        return [PartRow(**dict(r)) for r in cur.fetchall()]
