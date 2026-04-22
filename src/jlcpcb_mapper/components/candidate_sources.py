@@ -101,7 +101,7 @@ class ResistorSource:
 class CeramicCapSource:
     """Multilayer ceramic capacitors. Exact package match + description LIKE on value."""
 
-    def __init__(self, min_stock: int = 0, limit: int = 30):
+    def __init__(self, min_stock: int = 0, limit: int = 50):
         self.min_stock = min_stock
         self.limit = limit
 
