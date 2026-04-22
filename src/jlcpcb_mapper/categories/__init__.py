@@ -7,7 +7,7 @@ def default_registry(*, fp_out_dir: Path) -> Registry:
     # Imports inside the function body to avoid circular dependency:
     # core/registry.py → categories/base.py → categories/__init__.py → core/registry.py
     from ..core.registry import Registry
-    from . import polarized_cap, resistor, ceramic_cap, inductor
+    from . import polarized_cap, resistor, ceramic_cap, inductor, led
     r = Registry()
     # polarized_cap MUST come before ceramic_cap: LibIdAny(["Device:C"]) in ceramic_cap
     # would match "Device:C_Polarized" via prefix, so polarized_cap must claim it first.
@@ -15,4 +15,5 @@ def default_registry(*, fp_out_dir: Path) -> Registry:
     r.register(resistor.make(fp_out_dir=fp_out_dir))
     r.register(ceramic_cap.make(fp_out_dir=fp_out_dir))
     r.register(inductor.make(fp_out_dir=fp_out_dir))
+    r.register(led.make(fp_out_dir=fp_out_dir))
     return r
