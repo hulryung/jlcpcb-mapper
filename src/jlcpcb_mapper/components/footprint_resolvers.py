@@ -1,5 +1,6 @@
 """Footprint resolvers. BuiltinMap and EasyedaFallback compose via Composite."""
 from __future__ import annotations
+from collections.abc import Callable
 from pathlib import Path
 from ..categories.base import ResolveResult
 from ..parts_db import PartRow
@@ -19,7 +20,7 @@ class BuiltinMap:
 class EasyedaFallback:
     """Download a KiCad footprint from EasyEDA for the given LCSC."""
 
-    def __init__(self, out_dir: Path, downloader=None):
+    def __init__(self, out_dir: Path, downloader: Callable[[str, Path], Path | None] | None = None):
         self.out_dir = Path(out_dir)
         # Injectable downloader for tests; defaults to production downloader.
         if downloader is None:
@@ -36,7 +37,11 @@ class EasyedaFallback:
 
 
 class Composite:
-    """Try each resolver in order; return the first non-empty footprint."""
+    """Try each resolver in order; return the first non-empty footprint.
+
+    If all resolvers miss, returns the last result — so put the authoritative
+    fallback (e.g. EasyedaFallback) last to preserve its diagnostic fields.
+    """
 
     def __init__(self, resolvers: list):
         self._resolvers = list(resolvers)
