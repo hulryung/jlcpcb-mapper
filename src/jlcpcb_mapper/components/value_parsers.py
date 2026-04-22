@@ -6,6 +6,7 @@ from ..categories.spec.cap import CeramicCapSpec, PolarizedCapSpec
 from ..categories.spec.resistor import ResistorSpec
 from ..categories.spec.inductor import InductorSpec
 from ..categories.spec.led import LEDSpec
+from ..categories.spec.crystal import CrystalSpec
 
 
 _CAP_RE = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*([munpµu]?)[Ff]?\s*$", re.IGNORECASE)
@@ -107,6 +108,39 @@ class LEDValueParser:
         if not token:
             return None
         return LEDSpec(value=Value(0, token))
+
+
+_XTAL_WITH_PREFIX = re.compile(r"^(\d+(?:\.\d+)?)\s*([kKmM])(?:Hz|HZ|hz)?$")
+_XTAL_BARE_HZ = re.compile(r"^(\d+(?:\.\d+)?)\s*(?:Hz|HZ|hz)$")
+
+
+class CrystalValueParser:
+    """Parse crystal frequency strings and return CrystalSpec or None.
+
+    Accepted forms:
+      "16MHz"       → Value(16, "MHz")
+      "32.768kHz"   → Value(32.768, "kHz")
+      "16M" / "16m" → Value(16, "MHz")
+      "25MHZ"       → Value(25, "MHz")
+      "400Hz"       → Value(400, "Hz")
+    Returns None on bare numbers ("16"), empty input, or junk.
+    """
+
+    def parse(self, raw: str) -> CrystalSpec | None:
+        if not raw or not raw.strip():
+            return None
+        # Handle slash-separated (uncommon): take first token only
+        token = raw.split("/")[0].strip()
+        m = _XTAL_WITH_PREFIX.match(token)
+        if m:
+            mag = float(m.group(1))
+            unit_prefix = m.group(2).lower()
+            unit = "kHz" if unit_prefix == "k" else "MHz"
+            return CrystalSpec(value=Value(mag, unit))
+        m = _XTAL_BARE_HZ.match(token)
+        if m:
+            return CrystalSpec(value=Value(float(m.group(1)), "Hz"))
+        return None
 
 
 class CapValueParser:

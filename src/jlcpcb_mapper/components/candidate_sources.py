@@ -147,6 +147,36 @@ class InductorSource:
         return rows
 
 
+class CrystalSource:
+    """Crystals. Broad %Crystal% fetch + package substring post_filter.
+
+    Requires package_hint; if empty, returns no candidates.
+    """
+
+    def __init__(self, min_stock: int = 0, limit: int = 50):
+        self.min_stock = min_stock
+        self.limit = limit
+
+    def query(self, spec, package_hint: str) -> QuerySpec:
+        patterns: tuple[str, ...] = ()
+        if spec.value is not None:
+            token = spec.value.display()   # e.g. "16MHz"
+            patterns = (f"%{token}%",)
+        return QuerySpec(
+            category_like="%Crystal%",
+            package=None,   # substring filter applied in post_filter
+            description_patterns=patterns,
+            min_stock=self.min_stock,
+            limit=self.limit,
+        )
+
+    def post_filter(self, rows: list[PartRow], spec, package_hint: str) -> list[PartRow]:
+        if not package_hint:
+            return []   # safer to return empty than mismap
+        hint = package_hint.lower()
+        return [r for r in rows if hint in (r.package or "").lower()]
+
+
 class LEDSource:
     """LED candidate source. Broad category + token substring in description.
 
