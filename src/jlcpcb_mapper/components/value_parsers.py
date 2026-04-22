@@ -7,6 +7,7 @@ from ..categories.spec.resistor import ResistorSpec
 from ..categories.spec.inductor import InductorSpec
 from ..categories.spec.led import LEDSpec
 from ..categories.spec.crystal import CrystalSpec
+from ..categories.spec.ic import ICSpec
 
 
 _CAP_RE = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*([munpµu]?)[Ff]?\s*$", re.IGNORECASE)
@@ -169,3 +170,17 @@ class CapValueParser:
             if voltage:
                 break
         return PolarizedCapSpec(value=value, voltage=voltage)
+
+
+class ICValueParser:
+    """Pass-through parser; the Value field for ICs is the MPN itself.
+
+    MPNs are case-sensitive (e.g. "LM2596S-3.3"), so case is preserved.
+    Returns None on empty or whitespace-only input.
+    """
+
+    def parse(self, raw: str) -> ICSpec | None:
+        mpn = (raw or "").strip()
+        if not mpn:
+            return None
+        return ICSpec(mpn=mpn)

@@ -203,3 +203,40 @@ class LEDSource:
 
     def post_filter(self, rows: list[PartRow], spec, package_hint: str) -> list[PartRow]:
         return rows
+
+
+class ICSource:
+    """IC candidate source. Matches MPN against mfr_part column.
+
+    Requires package_hint — IC variants with different pinouts are dangerous
+    to mismap. Returns empty if no package hint (post_filter catches it).
+    Uses category_like="%" (broad fetch) since JLCPCB subcategorizes ICs heavily.
+    """
+
+    def __init__(self, min_stock: int = 0, limit: int = 50):
+        self.min_stock = min_stock
+        self.limit = limit
+
+    def query(self, spec, package_hint: str) -> QuerySpec:
+        if not package_hint or not spec.mpn:
+            # post_filter will catch this and return []; issue a tight query meanwhile
+            return QuerySpec(
+                category_like="%",
+                min_stock=self.min_stock,
+                limit=1,  # minimize wasted work
+            )
+        # Escape % and _ for SQL LIKE
+        escaped = spec.mpn.replace("%", r"\%").replace("_", r"\_")
+        return QuerySpec(
+            category_like="%",
+            package=None,  # substring filter applied in post_filter
+            mpn_patterns=(f"%{escaped}%",),
+            min_stock=self.min_stock,
+            limit=self.limit,
+        )
+
+    def post_filter(self, rows: list[PartRow], spec, package_hint: str) -> list[PartRow]:
+        if not package_hint or not spec.mpn:
+            return []
+        hint = package_hint.lower()
+        return [r for r in rows if hint in (r.package or "").lower()]

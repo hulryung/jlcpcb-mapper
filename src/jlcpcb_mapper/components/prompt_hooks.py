@@ -42,3 +42,16 @@ class CapPromptHook:
 
     def candidate_payload(self, row: PartRow) -> dict:
         return _common_candidate_payload(row)
+
+
+class ICPromptHook:
+    """Prompt hook for ICs. Emphasizes exact MPN match."""
+
+    def selection_criteria(self) -> str:
+        return ("Prefer Basic parts with higher stock. "
+                "CRITICALLY: the mfr_part field must match the requested MPN "
+                "exactly (allowing for trailing variant codes like -REEL, /TR). "
+                "Do not select a different part family with a similar name.")
+
+    def candidate_payload(self, row: PartRow) -> dict:
+        return _common_candidate_payload(row)
