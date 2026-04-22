@@ -21,7 +21,7 @@ COLS = "lcsc, category, mfr, mfr_part, package, description, basic, preferred, s
 class PartsDB:
     def __init__(self, path: str | Path):
         self.path = Path(path)
-        self._conn = sqlite3.connect(str(self.path))
+        self._conn = sqlite3.connect(str(self.path), check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
 
     def get(self, lcsc: str) -> PartRow | None:
