@@ -96,3 +96,27 @@ class ResistorSource:
     def post_filter(self, rows: list[PartRow], spec, package_hint: str) -> list[PartRow]:
         # SQL already narrow — no additional client-side filtering needed.
         return rows
+
+
+class CeramicCapSource:
+    """Multilayer ceramic capacitors. Exact package match + description LIKE on value."""
+
+    def __init__(self, min_stock: int = 0, limit: int = 30):
+        self.min_stock = min_stock
+        self.limit = limit
+
+    def query(self, spec, package_hint: str) -> QuerySpec:
+        patterns: tuple[str, ...] = ()
+        if spec.value is not None:
+            token = f"%{_normalize_micro(spec.value.display())}%"
+            patterns = (token,)
+        return QuerySpec(
+            category_like="%Ceramic Capacitor%",
+            package=package_hint or None,
+            description_patterns=patterns,
+            min_stock=self.min_stock,
+            limit=self.limit,
+        )
+
+    def post_filter(self, rows: list[PartRow], spec, package_hint: str) -> list[PartRow]:
+        return rows
