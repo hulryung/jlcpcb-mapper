@@ -3,7 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 
-def default_registry(*, fp_out_dir: Path):
+def default_registry(*, fp_out_dir: Path) -> Registry:
+    # Imports inside the function body to avoid circular dependency:
+    # core/registry.py → categories/base.py → categories/__init__.py → core/registry.py
     from ..core.registry import Registry
     from . import polarized_cap
     r = Registry()

@@ -1,5 +1,6 @@
 """Pipeline orchestration: categorize → parse → extract → group → query → decide → resolve."""
 from __future__ import annotations
+import dataclasses
 from dataclasses import dataclass, field
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -116,7 +117,7 @@ def _process_group(g: Group, db, llm, hints, tau, top_n, min_stock) -> Decision:
     qspec: QuerySpec = cat.candidate_source.query(g.spec, g.package_hint)
     # Override min_stock if caller specified one and qspec didn't
     if min_stock and qspec.min_stock == 0:
-        qspec = QuerySpec(**{**qspec.__dict__, "min_stock": min_stock})
+        qspec = dataclasses.replace(qspec, min_stock=min_stock)
     g.trace.record("query", **{k: v for k, v in qspec.__dict__.items()})
     rows = db.execute(qspec)
     g.trace.record("query_result", count=len(rows))
@@ -132,7 +133,10 @@ def _process_group(g: Group, db, llm, hints, tau, top_n, min_stock) -> Decision:
     if all_have_fp:
         res = ResolveResult(footprint="", downloaded=False)
     else:
-        part = next(r for r in rows if r.lcsc == chosen)
+        part = next((r for r in rows if r.lcsc == chosen), None)
+        if part is None:
+            g.trace.record("resolve", skipped="chosen_not_in_rows", chosen=chosen)
+            return Decision(g, chosen, rows, "", False, "failed", "chosen_not_in_rows")
         res = cat.footprint_resolver.resolve(part, g.package_hint)
     g.trace.record("resolve", footprint=res.footprint,
                    downloaded=res.downloaded, failed=res.download_failed)
