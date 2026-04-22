@@ -5,7 +5,7 @@ from ..core.types import QuerySpec
 from ..parts_db import PartRow
 
 
-_VOLTAGE_TOKEN = re.compile(r"(\d+(?:\.\d+)?)\s*V\b", re.IGNORECASE)
+_VOLTAGE_TOKEN = re.compile(r"(\d+(?:\.\d+)?)\s*V(?:DC|AC)?\b", re.IGNORECASE)
 
 
 def _extract_voltage_numbers(description: str) -> list[float]:

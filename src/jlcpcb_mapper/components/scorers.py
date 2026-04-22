@@ -5,7 +5,7 @@ from ..parts_db import PartRow
 from ..observability.trace import Trace
 
 
-_VOLTAGE_TOKEN = re.compile(r"(\d+(?:\.\d+)?)\s*V\b", re.IGNORECASE)
+_VOLTAGE_TOKEN = re.compile(r"(\d+(?:\.\d+)?)\s*V(?:DC|AC)?\b", re.IGNORECASE)
 
 
 def _stock_bucket(stock: int) -> float:

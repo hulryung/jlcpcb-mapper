@@ -34,3 +34,13 @@ def test_scorer_records_breakdown_in_trace():
     s.score(_row("C1", basic=1), spec, t)
     assert any(e.stage == "score_breakdown" and "C1" in str(e.data.get("lcsc", ""))
                for e in t.events)
+
+
+def test_concatenated_vdc_voltage_is_recognized():
+    """'10VDC' in description should score same as '10V'."""
+    s = PolarizedCapScorer()
+    spec = PolarizedCapSpec(value=Value(220, "µF"), voltage=Value(10, "V"))
+    t = Trace()
+    a = s.score(_row("C1", basic=1, desc="220uF 10VDC"), spec, t)
+    b = s.score(_row("C2", basic=1, desc="220uF 10V"),   spec, t)
+    assert a == b  # both get full W_VOLTAGE_EXACT

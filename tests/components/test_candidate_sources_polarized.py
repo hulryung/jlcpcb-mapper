@@ -60,3 +60,15 @@ def test_query_normalizes_greek_mu():
     spec = PolarizedCapSpec(value=Value(220, "μF"), voltage=None)
     q = PolarizedCapSource().query(spec, package_hint="")
     assert q.description_patterns == ("%220uF%",)
+
+
+def test_post_filter_accepts_concatenated_vdc_form():
+    """JLCPCB descriptions sometimes concatenate V with DC/AC (e.g., '10VDC')."""
+    src = PolarizedCapSource()
+    spec = PolarizedCapSpec(value=Value(220, "µF"), voltage=Value(10, "V"))
+    rows = [
+        _row("C1", "D6.3", "220uF 10VDC"),   # exact, concatenated
+        _row("C2", "D6.3", "220uF 6.3VDC"),  # under-rated, concatenated — should drop
+    ]
+    kept = src.post_filter(rows, spec, package_hint="D6.3")
+    assert {r.lcsc for r in kept} == {"C1"}
