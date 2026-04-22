@@ -4,6 +4,7 @@ import re
 from ..core.types import Value
 from ..categories.spec.cap import CeramicCapSpec, PolarizedCapSpec
 from ..categories.spec.resistor import ResistorSpec
+from ..categories.spec.inductor import InductorSpec
 
 
 _CAP_RE = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*([munpµu]?)[Ff]?\s*$", re.IGNORECASE)
@@ -63,6 +64,34 @@ class ResistorValueParser:
         mult = _R_MULT[m.group(2) or ""]
         ohms = num * mult
         return ResistorSpec(value=Value(ohms, "Ω"))
+
+
+_L_RE = re.compile(r"^(\d+(?:\.\d+)?)\s*([munpµμ]?)H$", re.IGNORECASE)
+_L_UNIT_CANON = {"u": "µ", "µ": "µ", "μ": "µ", "m": "m", "n": "n", "p": "p", "": ""}
+
+
+class InductorValueParser:
+    """Parse inductor value strings and return InductorSpec or None.
+
+    Accepted forms: "33uH", "33µH", "33μH" (Greek mu), "4.7uH", "10nH", "1mH", "33H".
+    Returns None on junk (empty, "foobar", "10uF").
+    """
+
+    def parse(self, raw: str) -> InductorSpec | None:
+        if not raw or not raw.strip():
+            return None
+        m = _L_RE.match(raw.strip())
+        if not m:
+            return None
+        mag = float(m.group(1))
+        prefix = m.group(2).lower()  # normalize to lowercase before canonicalization
+        # Canonicalize: both ASCII 'u' and micro-sign variants map to µ (U+00B5)
+        canon_prefix = _L_UNIT_CANON.get(prefix, prefix)
+        if canon_prefix == "":
+            unit = "H"
+        else:
+            unit = f"{canon_prefix}H"
+        return InductorSpec(value=Value(mag, unit))
 
 
 class CapValueParser:

@@ -120,3 +120,28 @@ class CeramicCapSource:
 
     def post_filter(self, rows: list[PartRow], spec, package_hint: str) -> list[PartRow]:
         return rows
+
+
+class InductorSource:
+    """Inductors. Exact package match when hint provided + description LIKE on value."""
+
+    def __init__(self, min_stock: int = 0, limit: int = 50):
+        self.min_stock = min_stock
+        self.limit = limit
+
+    def query(self, spec, package_hint: str) -> QuerySpec:
+        patterns: tuple[str, ...] = ()
+        if spec.value is not None:
+            # Normalize µ/μ → u for DB description matching
+            normalized = _normalize_micro(spec.value.display())
+            patterns = (f"%{normalized}%",)
+        return QuerySpec(
+            category_like="%Inductor%",
+            package=package_hint or None,  # exact package match when hint provided
+            description_patterns=patterns,
+            min_stock=self.min_stock,
+            limit=self.limit,
+        )
+
+    def post_filter(self, rows: list[PartRow], spec, package_hint: str) -> list[PartRow]:
+        return rows
