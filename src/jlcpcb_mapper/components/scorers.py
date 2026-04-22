@@ -17,6 +17,30 @@ def _stock_bucket(stock: int) -> float:
     return 0.1
 
 
+class GenericBasicStockScorer:
+    """Generic scorer for categories with no voltage/tolerance axis.
+
+    Weights: basic (0.4) + preferred (0.2) + stock-bucket (0.4).
+    """
+
+    W_BASIC = 0.4
+    W_PREFERRED = 0.2
+    W_STOCK = 0.4
+
+    def score(self, row: PartRow, spec, trace: Trace) -> float:
+        basic = self.W_BASIC if row.basic else 0.0
+        preferred = self.W_PREFERRED if row.preferred else 0.0
+        stock = self.W_STOCK * _stock_bucket(row.stock)
+        total = basic + preferred + stock
+        trace.record(
+            "score_breakdown",
+            lcsc=row.lcsc,
+            basic=basic, preferred=preferred, stock=stock,
+            total=total,
+        )
+        return total
+
+
 class PolarizedCapScorer:
     """Weights: basic (0.3) + preferred (0.1) + voltage-exact (0.3) + stock-bucket (0.3)."""
 
