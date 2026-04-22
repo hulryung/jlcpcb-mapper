@@ -53,3 +53,10 @@ def test_post_filter_no_voltage_spec_keeps_all():
     ]
     kept = src.post_filter(rows, spec, package_hint="D6.3")
     assert {r.lcsc for r in kept} == {"C1", "C2"}
+
+
+def test_query_normalizes_greek_mu():
+    """Greek mu (U+03BC) is also normalized to ASCII u in description pattern."""
+    spec = PolarizedCapSpec(value=Value(220, "μF"), voltage=None)
+    q = PolarizedCapSource().query(spec, package_hint="")
+    assert q.description_patterns == ("%220uF%",)
