@@ -7,8 +7,8 @@ def default_registry(*, fp_out_dir: Path) -> Registry:
     # Imports inside the function body to avoid circular dependency:
     # core/registry.py → categories/base.py → categories/__init__.py → core/registry.py
     from ..core.registry import Registry
-    from . import polarized_cap
+    from . import polarized_cap, resistor
     r = Registry()
     r.register(polarized_cap.make(fp_out_dir=fp_out_dir))
-    # Additional categories registered in later tasks.
+    r.register(resistor.make(fp_out_dir=fp_out_dir))
     return r
