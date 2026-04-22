@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from ..core.types import Value
 from ..categories.spec.cap import CeramicCapSpec, PolarizedCapSpec
+from ..categories.spec.resistor import ResistorSpec
 
 
 _CAP_RE = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*([munpµu]?)[Ff]?\s*$", re.IGNORECASE)
@@ -30,6 +31,38 @@ def _parse_voltage(token: str) -> Value | None:
     if not m:
         return None
     return Value(float(m.group(1)), "V")
+
+
+_R_RE = re.compile(r"^(\d+(?:\.\d+)?)(?:([KkMm])|R)?$")
+_R_MULT = {"K": 1000, "k": 1000, "M": 1_000_000, "m": 1_000_000, "": 1}
+
+
+class ResistorValueParser:
+    """Parse resistor value strings and return ResistorSpec or None.
+
+    Accepted forms: "10", "10k", "10K", "4.7k", "10M", "10m" (mega compat),
+    "10R", "0R", "0Ω", "10kΩ", "10k/0.1%" (slash-separated tolerance dropped).
+    Returns None on junk (empty, "foobar", "10uF").
+    """
+
+    def parse(self, raw: str) -> ResistorSpec | None:
+        if not raw or not raw.strip():
+            return None
+        # Drop slash-separated trailing tokens (tolerance, power, etc.)
+        token = raw.split("/", 1)[0].strip()
+        # Short-circuit zero-ohm special forms
+        if token in ("0", "0R", "0Ω"):
+            return ResistorSpec(value=Value(0.0, "Ω"))
+        # Strip trailing Ω so "10kΩ" becomes "10k"
+        if token.endswith("Ω"):
+            token = token[:-1]
+        m = _R_RE.match(token)
+        if not m:
+            return None
+        num = float(m.group(1))
+        mult = _R_MULT[m.group(2) or ""]
+        ohms = num * mult
+        return ResistorSpec(value=Value(ohms, "Ω"))
 
 
 class CapValueParser:
