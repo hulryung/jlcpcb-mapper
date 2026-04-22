@@ -145,3 +145,31 @@ class InductorSource:
 
     def post_filter(self, rows: list[PartRow], spec, package_hint: str) -> list[PartRow]:
         return rows
+
+
+class LEDSource:
+    """LED candidate source. Broad category + token substring in description.
+
+    LEDs have no SI magnitude; match by the raw token against descriptions.
+    """
+
+    def __init__(self, min_stock: int = 0, limit: int = 50):
+        self.min_stock = min_stock
+        self.limit = limit
+
+    def query(self, spec, package_hint: str) -> QuerySpec:
+        patterns: tuple[str, ...] = ()
+        token = spec.value.unit if spec.value else ""
+        if token:
+            # Case-insensitive SQL LIKE. Use exact token wrapped in %.
+            patterns = (f"%{token}%",)
+        return QuerySpec(
+            category_like="Light Emitting Diode%",
+            package=package_hint or None,
+            description_patterns=patterns,
+            min_stock=self.min_stock,
+            limit=self.limit,
+        )
+
+    def post_filter(self, rows: list[PartRow], spec, package_hint: str) -> list[PartRow]:
+        return rows

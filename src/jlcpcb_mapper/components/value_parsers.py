@@ -5,6 +5,7 @@ from ..core.types import Value
 from ..categories.spec.cap import CeramicCapSpec, PolarizedCapSpec
 from ..categories.spec.resistor import ResistorSpec
 from ..categories.spec.inductor import InductorSpec
+from ..categories.spec.led import LEDSpec
 
 
 _CAP_RE = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*([munpµu]?)[Ff]?\s*$", re.IGNORECASE)
@@ -92,6 +93,20 @@ class InductorValueParser:
         else:
             unit = f"{canon_prefix}H"
         return InductorSpec(value=Value(mag, unit))
+
+
+class LEDValueParser:
+    """Parse LED Value field. LEDs typically use descriptive tokens (color, MPN).
+
+    Stores the raw token (trimmed, upper-cased for grouping consistency) as
+    Value(0, token). Returns None on empty or whitespace-only input.
+    """
+
+    def parse(self, raw: str) -> LEDSpec | None:
+        token = raw.strip().upper()
+        if not token:
+            return None
+        return LEDSpec(value=Value(0, token))
 
 
 class CapValueParser:
