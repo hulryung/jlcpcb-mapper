@@ -55,3 +55,32 @@ def run_preflight(
         )
     if not skip_claude_check and not _claude_ok():
         raise PreflightError("claude CLI not available or failed smoke check.")
+
+
+from collections import Counter
+from .core.registry import Registry
+
+
+def lib_id_coverage_report(lib_ids: list[str], registry: Registry) -> dict:
+    """Classify observed lib_ids into matched (per category) vs unmatched.
+
+    Returns:
+        {
+            "matched": {category_name: count, ...},
+            "unmatched": [lib_id, ...] sorted alphabetically,
+            "unmatched_counts": {lib_id: count, ...},
+        }
+    """
+    matched: Counter[str] = Counter()
+    unmatched: Counter[str] = Counter()
+    for lid in lib_ids:
+        cat = registry.lookup(lid)
+        if cat is None:
+            unmatched[lid] += 1
+        else:
+            matched[cat.name] += 1
+    return {
+        "matched": dict(matched),
+        "unmatched": sorted(unmatched.keys()),
+        "unmatched_counts": dict(unmatched),
+    }
