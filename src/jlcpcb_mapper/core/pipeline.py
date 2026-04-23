@@ -77,7 +77,7 @@ def run_pipeline(
         cat = reg.lookup(inst.lib_id)
         if cat is None:
             continue
-        spec = cat.value_parser.parse(inst.value) if cat.value_parser else None
+        spec = cat.value_parser.parse(inst.value, lib_id=inst.lib_id) if cat.value_parser else None
         if spec is None:
             continue
         pkg = None

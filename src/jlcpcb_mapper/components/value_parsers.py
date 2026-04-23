@@ -49,7 +49,7 @@ class ResistorValueParser:
     Returns None on junk (empty, "foobar", "10uF").
     """
 
-    def parse(self, raw: str) -> ResistorSpec | None:
+    def parse(self, raw: str, *, lib_id: str | None = None) -> ResistorSpec | None:
         if not raw or not raw.strip():
             return None
         # Drop slash-separated trailing tokens (tolerance, power, etc.)
@@ -80,7 +80,7 @@ class InductorValueParser:
     Returns None on junk (empty, "foobar", "10uF").
     """
 
-    def parse(self, raw: str) -> InductorSpec | None:
+    def parse(self, raw: str, *, lib_id: str | None = None) -> InductorSpec | None:
         if not raw or not raw.strip():
             return None
         m = _L_RE.match(raw.strip())
@@ -104,7 +104,7 @@ class LEDValueParser:
     Value(0, token). Returns None on empty or whitespace-only input.
     """
 
-    def parse(self, raw: str) -> LEDSpec | None:
+    def parse(self, raw: str, *, lib_id: str | None = None) -> LEDSpec | None:
         token = raw.strip().upper()
         if not token:
             return None
@@ -127,7 +127,7 @@ class CrystalValueParser:
     Returns None on bare numbers ("16"), empty input, or junk.
     """
 
-    def parse(self, raw: str) -> CrystalSpec | None:
+    def parse(self, raw: str, *, lib_id: str | None = None) -> CrystalSpec | None:
         if not raw or not raw.strip():
             return None
         # Handle slash-separated (uncommon): take first token only
@@ -153,7 +153,7 @@ class CapValueParser:
     def __init__(self, *, keep_voltage: bool):
         self.keep_voltage = keep_voltage
 
-    def parse(self, raw: str):
+    def parse(self, raw: str, *, lib_id: str | None = None):
         if not raw or not raw.strip():
             return None
         parts = [p.strip() for p in raw.split("/")]
@@ -179,8 +179,47 @@ class ICValueParser:
     Returns None on empty or whitespace-only input.
     """
 
-    def parse(self, raw: str) -> ICSpec | None:
+    def parse(self, raw: str, *, lib_id: str | None = None) -> ICSpec | None:
         mpn = (raw or "").strip()
         if not mpn:
             return None
         return ICSpec(mpn=mpn)
+
+
+_CONN_1XN_RE = re.compile(r"^Connector_Generic:Conn_01x(\d+)")
+_CONN_2XN_RE = re.compile(r"^Connector_Generic:Conn_02x(\d+)")
+
+
+class ConnectorValueParser:
+    """Parse connector identity from lib_id + value.
+
+    lib_id determines structure:
+    - Connector_Generic:Conn_01xN -> "1xN" with pins=N
+    - Connector_Generic:Conn_02xN -> "2xN" with pins=N
+    - Anything else starting with "Connector" -> "generic" with pins=0
+
+    parse NEVER returns None — even an empty value produces a generic ConnectorSpec.
+    """
+
+    def parse(self, raw: str, *, lib_id: str | None = None):
+        from ..categories.spec.connector import ConnectorSpec
+        value = (raw or "").strip()
+        if not lib_id:
+            # Without lib_id, treat as generic connector
+            return ConnectorSpec(structure="generic", pins=0, value=value)
+        m = _CONN_1XN_RE.match(lib_id)
+        if m:
+            try:
+                pins = int(m.group(1))
+            except ValueError:
+                pins = 0
+            return ConnectorSpec(structure="1xN", pins=pins, value=value)
+        m = _CONN_2XN_RE.match(lib_id)
+        if m:
+            try:
+                pins = int(m.group(1))
+            except ValueError:
+                pins = 0
+            return ConnectorSpec(structure="2xN", pins=pins, value=value)
+        # Fallback: generic connector (matched on prefix but no structure info)
+        return ConnectorSpec(structure="generic", pins=0, value=value)

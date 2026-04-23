@@ -14,7 +14,7 @@ class Matcher(Protocol):
 
 @runtime_checkable
 class ValueParser(Protocol):
-    def parse(self, raw: str) -> Spec | None: ...
+    def parse(self, raw: str, *, lib_id: str | None = None) -> Spec | None: ...
 
 
 @runtime_checkable
