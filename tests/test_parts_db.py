@@ -1,6 +1,8 @@
 import pytest
+import sqlite3
 from tests.fixtures.make_test_db import build
 from jlcpcb_mapper.io.parts_db import PartsDB
+from jlcpcb_mapper.core.types import QuerySpec
 
 @pytest.fixture
 def db(tmp_path):
@@ -15,13 +17,14 @@ def test_lookup_by_lcsc(db):
     assert row.basic == 1
 
 def test_query_resistors_basic_first(db):
-    rows = db.query_candidates(
-        category_sql_like="Chip Resistor%",
+    q = QuerySpec(
+        category_like="Chip Resistor%",
         package="0402",
-        value_pattern="%0Ω%",
+        description_patterns=("%0Ω%",),
         min_stock=1000,
         limit=30,
     )
+    rows = db.execute(q)
     assert len(rows) >= 1
     assert rows[0].lcsc == "C17168"
 
@@ -31,7 +34,6 @@ def test_missing_lcsc_returns_none(db):
 
 def test_query_candidates_mpn_pattern(tmp_path):
     """mpn_pattern filters by mfr_part LIKE — used for IC/MPN-based searches."""
-    import sqlite3
     p = tmp_path / "parts.db"
     conn = sqlite3.connect(str(p))
     conn.execute("""CREATE TABLE parts (
@@ -46,13 +48,13 @@ def test_query_candidates_mpn_pattern(tmp_path):
     conn.commit(); conn.close()
 
     db = PartsDB(p)
-    rows = db.query_candidates(
-        category_sql_like="%",
+    q = QuerySpec(
+        category_like="%",
         package=None,
-        value_pattern=None,
         min_stock=0,
         limit=30,
-        mpn_pattern="%AO3400A%",
+        mpn_patterns=("%AO3400A%",),
     )
+    rows = db.execute(q)
     assert len(rows) == 1
     assert rows[0].lcsc == "C20917"

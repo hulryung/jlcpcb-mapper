@@ -2,7 +2,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from .io.schematic import Schematic, SymbolInstance
-from .values import category_from_lib_id
 
 @dataclass
 class Target:
@@ -32,7 +31,7 @@ def select_targets(
     for sch_path in proj.schematics:
         sch = proj.loaded[sch_path]
         for inst in sch.instances():
-            if category_from_lib_id(inst.lib_id) == "power":
+            if inst.lib_id.startswith("power:"):
                 continue
             if not inst.on_board:
                 continue  # literally not on PCB

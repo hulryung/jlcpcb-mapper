@@ -29,32 +29,6 @@ class PartsDB:
         r = cur.fetchone()
         return PartRow(**dict(r)) if r else None
 
-    def query_candidates(
-        self,
-        category_sql_like: str,
-        package: str | None,
-        value_pattern: str | None,
-        min_stock: int,
-        limit: int = 30,
-        mpn_pattern: str | None = None,
-    ) -> list[PartRow]:
-        clauses = ["category LIKE ?"]
-        args: list = [category_sql_like]
-        if package:
-            clauses.append("package = ?"); args.append(package)
-        if value_pattern:
-            clauses.append("description LIKE ?"); args.append(value_pattern)
-        if mpn_pattern:
-            clauses.append("mfr_part LIKE ?"); args.append(mpn_pattern)
-        clauses.append("stock >= ?"); args.append(min_stock)
-        sql = (
-            f"SELECT {COLS} FROM parts WHERE {' AND '.join(clauses)} "
-            f"ORDER BY basic DESC, preferred DESC, stock DESC LIMIT ?"
-        )
-        args.append(limit)
-        cur = self._conn.execute(sql, args)
-        return [PartRow(**dict(r)) for r in cur.fetchall()]
-
     def execute(self, q) -> list["PartRow"]:
         """Run a QuerySpec against parts.db. Added during architecture migration."""
         from ..core.types import QuerySpec  # local import to avoid cycles

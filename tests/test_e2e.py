@@ -29,7 +29,7 @@ def test_e2e_on_uart_fixture(tmp_path):
 
     with patch("jlcpcb_mapper.commands.map_cmd.ClaudeClient", return_value=fake_llm), \
          patch("jlcpcb_mapper.commands.map_cmd.run_preflight"), \
-         patch("jlcpcb_mapper.resolver.download_footprint", return_value=None):
+         patch("jlcpcb_mapper.io.easyeda.download_footprint", return_value=None):
         result = CliRunner().invoke(main, [
             "map", str(proj / "uart.kicad_pro"),
             "--non-interactive", "--force", "--allow-stale-db",

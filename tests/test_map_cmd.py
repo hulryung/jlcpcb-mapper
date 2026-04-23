@@ -29,7 +29,7 @@ def test_map_end_to_end_writes_footprint_and_lcsc(tmp_path):
 
     with patch("jlcpcb_mapper.commands.map_cmd.ClaudeClient", return_value=fake_llm), \
          patch("jlcpcb_mapper.commands.map_cmd.run_preflight"), \
-         patch("jlcpcb_mapper.resolver.download_footprint", return_value=None):
+         patch("jlcpcb_mapper.io.easyeda.download_footprint", return_value=None):
         report = run_map(
             project_pro=proj / "uart.kicad_pro",
             config=cfg,
@@ -88,7 +88,7 @@ def test_fill_lcsc_only_preserves_existing_footprint(tmp_path):
 
     with patch("jlcpcb_mapper.commands.map_cmd.ClaudeClient", return_value=fake_llm), \
          patch("jlcpcb_mapper.commands.map_cmd.run_preflight"), \
-         patch("jlcpcb_mapper.resolver.download_footprint", return_value=None):
+         patch("jlcpcb_mapper.io.easyeda.download_footprint", return_value=None):
         run_map(
             project_pro=proj / "uart.kicad_pro",
             config=cfg,
