@@ -21,6 +21,11 @@ selection:
 verify:
   min_stock_warning: 1000
   price_change_pct_warning: 30
+
+# Pipeline decision thresholds
+score_tiebreak_threshold: 0.1   # scorer picks top1 if top-score minus second-score >= this
+llm_tiebreak_top_n: 5           # when scorer ties, send this many top candidates to LLM
+
 download:
   output_dir: libs/lcsc
   download_3d_models: false

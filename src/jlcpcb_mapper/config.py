@@ -47,6 +47,8 @@ class Config:
     download: DownloadSettings
     kicad_footprint_map_overrides: dict
     hints: str
+    score_tiebreak_threshold: float = 0.1
+    llm_tiebreak_top_n: int = 5
     _used_defaults_only: bool = False
 
 def _load_default_dict() -> dict:
@@ -71,5 +73,7 @@ def load_config(path: str | Path) -> Config:
         download=DownloadSettings(**merged["download"]),
         kicad_footprint_map_overrides=merged["kicad_footprint_map_overrides"],
         hints=merged["hints"],
+        score_tiebreak_threshold=merged.get("score_tiebreak_threshold", 0.1),
+        llm_tiebreak_top_n=merged.get("llm_tiebreak_top_n", 5),
         _used_defaults_only=used_defaults,
     )
