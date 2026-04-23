@@ -2,7 +2,7 @@ import pytest
 from jlcpcb_mapper.core.types import Value
 from jlcpcb_mapper.categories.spec.resistor import ResistorSpec
 from jlcpcb_mapper.components.candidate_sources import ResistorSource
-from jlcpcb_mapper.parts_db import PartRow
+from jlcpcb_mapper.io.parts_db import PartRow
 
 
 def _spec(ohms: float) -> ResistorSpec:

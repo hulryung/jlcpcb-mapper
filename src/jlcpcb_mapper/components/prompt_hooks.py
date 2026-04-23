@@ -1,6 +1,6 @@
 """Per-category LLM prompt hooks."""
 from __future__ import annotations
-from ..parts_db import PartRow
+from ..io.parts_db import PartRow
 
 
 def _common_candidate_payload(row: PartRow) -> dict:

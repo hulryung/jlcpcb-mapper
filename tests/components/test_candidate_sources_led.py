@@ -2,7 +2,7 @@ import pytest
 from jlcpcb_mapper.core.types import Value, QuerySpec
 from jlcpcb_mapper.categories.spec.led import LEDSpec
 from jlcpcb_mapper.components.candidate_sources import LEDSource
-from jlcpcb_mapper.parts_db import PartRow
+from jlcpcb_mapper.io.parts_db import PartRow
 
 
 def _spec(token: str) -> LEDSpec:

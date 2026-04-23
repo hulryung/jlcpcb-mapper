@@ -3,8 +3,8 @@ from dataclasses import dataclass
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from .grouper import Group, GroupKey
-from .parts_db import PartRow
-from .llm import ClaudeClient, LLMError
+from .io.parts_db import PartRow
+from .io.llm import ClaudeClient, LLMError
 
 @dataclass
 class SelectionResult:

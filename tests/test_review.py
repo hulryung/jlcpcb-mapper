@@ -2,8 +2,8 @@ from unittest.mock import MagicMock
 from jlcpcb_mapper.review import review_mapping, ReviewFlag
 from jlcpcb_mapper.select import SelectionResult
 from jlcpcb_mapper.grouper import Group, GroupKey
-from jlcpcb_mapper.parts_db import PartRow
-from jlcpcb_mapper.schematic import SymbolInstance
+from jlcpcb_mapper.io.parts_db import PartRow
+from jlcpcb_mapper.io.schematic import SymbolInstance
 
 def mk_sel(category, value, lcsc):
     inst = SymbolInstance("R1", "0", "Device:R_Small_US", "", "", False)

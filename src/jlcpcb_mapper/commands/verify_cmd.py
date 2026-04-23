@@ -4,7 +4,7 @@ import json
 
 from ..config import Config
 from ..project import load_project
-from ..parts_db import PartsDB
+from ..io.parts_db import PartsDB
 from ..preflight import run_preflight
 from ..report import RunReport
 

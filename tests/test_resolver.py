@@ -1,6 +1,6 @@
 from unittest.mock import patch
 from jlcpcb_mapper.resolver import resolve_footprint
-from jlcpcb_mapper.parts_db import PartRow
+from jlcpcb_mapper.io.parts_db import PartRow
 
 def row(lcsc="C1", package="0402"):
     return PartRow(lcsc, "Chip Resistor", "m", "p", package, "desc", 1, 0, 1000, 0.1)

@@ -1,7 +1,7 @@
 from jlcpcb_mapper.core.types import Value
 from jlcpcb_mapper.categories.spec.resistor import ResistorSpec
 from jlcpcb_mapper.components.scorers import GenericBasicStockScorer
-from jlcpcb_mapper.parts_db import PartRow
+from jlcpcb_mapper.io.parts_db import PartRow
 from jlcpcb_mapper.observability.trace import Trace
 
 

@@ -3,7 +3,7 @@ import pytest
 from jlcpcb_mapper.core.types import QuerySpec
 from jlcpcb_mapper.categories.spec.ic import ICSpec
 from jlcpcb_mapper.components.candidate_sources import ICSource
-from jlcpcb_mapper.parts_db import PartRow
+from jlcpcb_mapper.io.parts_db import PartRow
 
 
 def _spec(mpn: str) -> ICSpec:

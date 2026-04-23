@@ -1,6 +1,6 @@
 import pytest
 from tests.fixtures.make_test_db import build
-from jlcpcb_mapper.parts_db import PartsDB
+from jlcpcb_mapper.io.parts_db import PartsDB
 
 @pytest.fixture
 def db(tmp_path):

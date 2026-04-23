@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from .select import SelectionResult
-from .llm import ClaudeClient, LLMError
+from .io.llm import ClaudeClient, LLMError
 
 @dataclass
 class ReviewFlag:

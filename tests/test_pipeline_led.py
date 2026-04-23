@@ -19,7 +19,7 @@ import sqlite3
 from pathlib import Path
 import pytest
 from jlcpcb_mapper.core.pipeline import run_pipeline, Instance
-from jlcpcb_mapper.parts_db import PartsDB
+from jlcpcb_mapper.io.parts_db import PartsDB
 
 
 class _FakeLLM:

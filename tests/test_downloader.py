@@ -1,6 +1,6 @@
 from pathlib import Path
 from unittest.mock import patch
-from jlcpcb_mapper.downloader import download_footprint, ensure_fp_lib_table_entry
+from jlcpcb_mapper.io.easyeda import download_footprint, ensure_fp_lib_table_entry
 
 
 def test_ensure_fp_lib_table_adds_entry(tmp_path):
@@ -23,7 +23,7 @@ def test_ensure_fp_lib_table_idempotent(tmp_path):
 
 def test_download_footprint_success(tmp_path):
     out_dir = tmp_path / "libs/lcsc/footprints.pretty"
-    with patch("jlcpcb_mapper.downloader._easyeda_to_kicad_mod") as mock:
+    with patch("jlcpcb_mapper.io.easyeda._easyeda_to_kicad_mod") as mock:
         mock.return_value = ("C12345_QFN", "(module ... )")
         path = download_footprint("C12345", out_dir)
     assert path is not None
@@ -33,6 +33,6 @@ def test_download_footprint_success(tmp_path):
 
 def test_download_footprint_failure_returns_none(tmp_path):
     out_dir = tmp_path / "libs/lcsc/footprints.pretty"
-    with patch("jlcpcb_mapper.downloader._easyeda_to_kicad_mod", return_value=None):
+    with patch("jlcpcb_mapper.io.easyeda._easyeda_to_kicad_mod", return_value=None):
         path = download_footprint("C99999", out_dir)
     assert path is None

@@ -1,6 +1,6 @@
 import pytest
 from tests.fixtures.make_test_db import build
-from jlcpcb_mapper.parts_db import PartsDB
+from jlcpcb_mapper.io.parts_db import PartsDB
 from jlcpcb_mapper.candidates import candidates_for, _value_to_sql_pattern
 from jlcpcb_mapper.grouper import GroupKey
 
@@ -87,7 +87,7 @@ def test_candidates_match_real_description_formats(tmp_path):
     conn.commit()
     conn.close()
 
-    from jlcpcb_mapper.parts_db import PartsDB
+    from jlcpcb_mapper.io.parts_db import PartsDB
     from jlcpcb_mapper.candidates import candidates_for
     from jlcpcb_mapper.grouper import GroupKey
     db = PartsDB(p)
@@ -122,7 +122,7 @@ def test_unsupported_categories_return_empty(tmp_path):
     )
     conn.commit(); conn.close()
 
-    from jlcpcb_mapper.parts_db import PartsDB
+    from jlcpcb_mapper.io.parts_db import PartsDB
     from jlcpcb_mapper.candidates import candidates_for
     from jlcpcb_mapper.grouper import GroupKey
     db = PartsDB(p)
@@ -147,7 +147,7 @@ def test_crystal_with_package_hint_returns_candidates(tmp_path):
     ])
     conn.commit(); conn.close()
 
-    from jlcpcb_mapper.parts_db import PartsDB
+    from jlcpcb_mapper.io.parts_db import PartsDB
     from jlcpcb_mapper.candidates import candidates_for
     from jlcpcb_mapper.grouper import GroupKey
 
@@ -180,7 +180,7 @@ def test_ic_with_package_hint_mpn_search(tmp_path):
     ])
     conn.commit(); conn.close()
 
-    from jlcpcb_mapper.parts_db import PartsDB
+    from jlcpcb_mapper.io.parts_db import PartsDB
     from jlcpcb_mapper.candidates import candidates_for
     from jlcpcb_mapper.grouper import GroupKey
 
@@ -207,7 +207,7 @@ def test_inductor_candidate_pattern(tmp_path):
     ])
     conn.commit(); conn.close()
 
-    from jlcpcb_mapper.parts_db import PartsDB
+    from jlcpcb_mapper.io.parts_db import PartsDB
     from jlcpcb_mapper.candidates import candidates_for
     from jlcpcb_mapper.grouper import GroupKey
     db = PartsDB(p)
@@ -232,7 +232,7 @@ def test_plain_connector_returns_empty(tmp_path):
     )
     conn.commit(); conn.close()
 
-    from jlcpcb_mapper.parts_db import PartsDB
+    from jlcpcb_mapper.io.parts_db import PartsDB
     from jlcpcb_mapper.candidates import candidates_for
     from jlcpcb_mapper.grouper import GroupKey
 

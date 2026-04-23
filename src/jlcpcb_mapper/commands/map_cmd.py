@@ -5,15 +5,15 @@ from datetime import datetime
 
 from ..config import Config
 from ..project import load_project, select_targets, Target
-from ..parts_db import PartsDB
+from ..io.parts_db import PartsDB
 from ..grouper import group_instances, Group, GroupKey
 from ..candidates import candidates_for
-from ..llm import ClaudeClient
+from ..io.llm import ClaudeClient
 from ..select import select_for_groups, SelectionResult
 from ..review import review_mapping, ReviewFlag
 from ..resolver import resolve_footprint, ResolveResult
-from ..downloader import ensure_fp_lib_table_entry
-from ..schematic import atomic_update
+from ..io.easyeda import ensure_fp_lib_table_entry
+from ..io.schematic import atomic_update
 from ..preflight import run_preflight
 from ..report import RunReport
 

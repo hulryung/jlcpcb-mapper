@@ -2,7 +2,7 @@
 from __future__ import annotations
 import re
 from ..core.types import QuerySpec
-from ..parts_db import PartRow
+from ..io.parts_db import PartRow
 
 
 def _resistor_si_pattern(ohms: float) -> str:

@@ -2,7 +2,7 @@ import sqlite3
 from pathlib import Path
 import pytest
 from jlcpcb_mapper.core.pipeline import run_pipeline, Instance
-from jlcpcb_mapper.parts_db import PartsDB
+from jlcpcb_mapper.io.parts_db import PartsDB
 
 
 class _FakeLLM:
@@ -50,7 +50,7 @@ def _stub_easyeda(monkeypatch, tmp_path):
         Path(out_dir).mkdir(parents=True, exist_ok=True)
         path.write_text("(module fake)")
         return path
-    import jlcpcb_mapper.downloader as dl
+    import jlcpcb_mapper.io.easyeda as dl
     monkeypatch.setattr(dl, "download_footprint", _fake_download)
 
 

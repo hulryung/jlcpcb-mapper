@@ -2,8 +2,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from .kicad_fp import match_kicad_footprint
-from .downloader import download_footprint
-from .parts_db import PartRow
+from .io.easyeda import download_footprint
+from .io.parts_db import PartRow
 
 @dataclass
 class ResolveResult:

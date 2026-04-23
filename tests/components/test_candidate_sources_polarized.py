@@ -1,7 +1,7 @@
 from jlcpcb_mapper.core.types import Value
 from jlcpcb_mapper.categories.spec.cap import PolarizedCapSpec
 from jlcpcb_mapper.components.candidate_sources import PolarizedCapSource
-from jlcpcb_mapper.parts_db import PartRow
+from jlcpcb_mapper.io.parts_db import PartRow
 
 
 def _row(lcsc, pkg, desc, stock=10000, basic=0, preferred=0):

@@ -2,7 +2,7 @@
 from jlcpcb_mapper.core.types import Value
 from jlcpcb_mapper.categories.spec.cap import CeramicCapSpec
 from jlcpcb_mapper.components.candidate_sources import CeramicCapSource
-from jlcpcb_mapper.parts_db import PartRow
+from jlcpcb_mapper.io.parts_db import PartRow
 
 
 def _row(lcsc, pkg, desc, stock=10000, basic=0, preferred=0):

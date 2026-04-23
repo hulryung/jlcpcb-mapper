@@ -1,7 +1,7 @@
 """Tests for ICPromptHook."""
 import pytest
 from jlcpcb_mapper.components.prompt_hooks import ICPromptHook
-from jlcpcb_mapper.parts_db import PartRow
+from jlcpcb_mapper.io.parts_db import PartRow
 
 
 def _row():

@@ -1,6 +1,6 @@
 import json
 from unittest.mock import patch, MagicMock
-from jlcpcb_mapper.llm import ClaudeClient, LLMError
+from jlcpcb_mapper.io.llm import ClaudeClient, LLMError
 
 def _mock_run(output: str, returncode: int = 0):
     cp = MagicMock()

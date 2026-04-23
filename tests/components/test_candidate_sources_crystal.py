@@ -2,7 +2,7 @@ import pytest
 from jlcpcb_mapper.core.types import Value, QuerySpec
 from jlcpcb_mapper.categories.spec.crystal import CrystalSpec
 from jlcpcb_mapper.components.candidate_sources import CrystalSource
-from jlcpcb_mapper.parts_db import PartRow
+from jlcpcb_mapper.io.parts_db import PartRow
 
 
 def _spec(mag, unit) -> CrystalSpec:

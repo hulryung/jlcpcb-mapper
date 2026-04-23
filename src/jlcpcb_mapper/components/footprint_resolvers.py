@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from pathlib import Path
 from ..categories.base import ResolveResult
-from ..parts_db import PartRow
+from ..io.parts_db import PartRow
 
 
 class BuiltinMap:
@@ -24,7 +24,7 @@ class EasyedaFallback:
         self.out_dir = Path(out_dir)
         # Injectable downloader for tests; defaults to production downloader.
         if downloader is None:
-            from ..downloader import download_footprint as _dl
+            from ..io.easyeda import download_footprint as _dl
             downloader = _dl
         self._download = downloader
 

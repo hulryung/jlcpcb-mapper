@@ -11,7 +11,7 @@ from .registry import Registry
 from ..categories.base import Category, ResolveResult
 from ..categories import default_registry
 from ..observability.trace import Trace
-from ..parts_db import PartsDB, PartRow
+from ..io.parts_db import PartsDB, PartRow
 
 
 @dataclass

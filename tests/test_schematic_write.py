@@ -1,5 +1,5 @@
 from pathlib import Path
-from jlcpcb_mapper.schematic import Schematic, atomic_update
+from jlcpcb_mapper.io.schematic import Schematic, atomic_update
 
 FIX = Path(__file__).parent / "fixtures"
 

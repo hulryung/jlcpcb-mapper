@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 from ..core.types import QuerySpec, Spec
-from ..parts_db import PartRow
+from ..io.parts_db import PartRow
 from ..observability.trace import Trace
 
 

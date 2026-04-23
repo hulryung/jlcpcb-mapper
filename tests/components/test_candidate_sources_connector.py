@@ -1,7 +1,7 @@
 """Tests for ConnectorSource."""
 from jlcpcb_mapper.components.candidate_sources import ConnectorSource
 from jlcpcb_mapper.categories.spec.connector import ConnectorSpec
-from jlcpcb_mapper.parts_db import PartRow
+from jlcpcb_mapper.io.parts_db import PartRow
 
 
 def _spec(structure: str, pins: int, value: str = "") -> ConnectorSpec:

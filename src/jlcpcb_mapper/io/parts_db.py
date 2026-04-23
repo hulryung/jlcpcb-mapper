@@ -57,7 +57,7 @@ class PartsDB:
 
     def execute(self, q) -> list["PartRow"]:
         """Run a QuerySpec against parts.db. Added during architecture migration."""
-        from .core.types import QuerySpec  # local import to avoid cycles
+        from ..core.types import QuerySpec  # local import to avoid cycles
         assert isinstance(q, QuerySpec), f"expected QuerySpec, got {type(q).__name__}"
         clauses: list[str] = ["category LIKE ?"]
         args: list = [q.category_like]

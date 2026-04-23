@@ -1,5 +1,5 @@
 from jlcpcb_mapper.grouper import group_instances, GroupKey, Group
-from jlcpcb_mapper.schematic import SymbolInstance
+from jlcpcb_mapper.io.schematic import SymbolInstance
 
 def mk(ref, value, lib_id, footprint="", lcsc="", dnp=False):
     return SymbolInstance(ref, value, lib_id, footprint, lcsc, dnp)

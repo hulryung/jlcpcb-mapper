@@ -1,6 +1,6 @@
 from __future__ import annotations
 import re
-from .parts_db import PartsDB, PartRow
+from .io.parts_db import PartsDB, PartRow
 from .grouper import GroupKey
 
 # Categories that are safer to skip entirely than to mismap.

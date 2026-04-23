@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from .schematic import SymbolInstance
+from .io.schematic import SymbolInstance
 from .values import normalize_value, category_from_lib_id
 from .footprint import package_from_kicad_footprint
 

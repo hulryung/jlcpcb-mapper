@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
-from .schematic import Schematic, SymbolInstance
+from .io.schematic import Schematic, SymbolInstance
 from .values import category_from_lib_id
 
 @dataclass

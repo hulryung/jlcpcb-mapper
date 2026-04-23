@@ -1,7 +1,7 @@
 """Deterministic scorers for categories that permit objective ranking."""
 from __future__ import annotations
 import re
-from ..parts_db import PartRow
+from ..io.parts_db import PartRow
 from ..observability.trace import Trace
 
 

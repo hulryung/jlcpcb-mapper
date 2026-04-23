@@ -1,6 +1,6 @@
 from jlcpcb_mapper.components.footprint_resolvers import BuiltinMap, Composite
 from jlcpcb_mapper.categories.base import ResolveResult
-from jlcpcb_mapper.parts_db import PartRow
+from jlcpcb_mapper.io.parts_db import PartRow
 
 
 def _part(lcsc="C1", package="0402"):
