@@ -24,12 +24,16 @@ class RunReport:
     filtered_in: int = 0
     groups: list[GroupOutcome] = field(default_factory=list)
     failures: list[Failure] = field(default_factory=list)
+    sources: dict[str, int] = field(default_factory=dict)
 
     def add_group_result(self, **kw) -> None:
         self.groups.append(GroupOutcome(**kw))
 
     def add_failure(self, **kw) -> None:
         self.failures.append(Failure(**kw))
+
+    def record_source(self, source: str) -> None:
+        self.sources[source] = self.sources.get(source, 0) + 1
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -41,6 +45,10 @@ class RunReport:
             f"Filtered in: {self.filtered_in}",
             f"Groups: {len(self.groups)}",
         ]
+        if self.sources:
+            lines.append("Sources:")
+            for k, v in sorted(self.sources.items()):
+                lines.append(f"  {k}: {v}")
         if self.failures:
             lines.append("Failures:")
             for f in self.failures:
