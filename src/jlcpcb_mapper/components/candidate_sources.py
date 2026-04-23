@@ -240,3 +240,48 @@ class ICSource:
             return []
         hint = package_hint.lower()
         return [r for r in rows if hint in (r.package or "").lower()]
+
+
+class ConnectorSource:
+    """Connector candidate source.
+
+    - 1xN: broad fetch by %Connector%, optionally filtered by value in description;
+      post_filter passes all rows through (scorer/LLM decides).
+    - 2xN with hint: broad fetch + post_filter keeps rows with package_hint substring.
+    - 2xN without hint: tight no-match query (limit=1, %); post_filter returns [].
+    - generic: tight no-match query; post_filter returns [].
+    """
+
+    def __init__(self, min_stock: int = 0, limit: int = 50):
+        self.min_stock = min_stock
+        self.limit = limit
+
+    def query(self, spec, package_hint: str) -> QuerySpec:
+        if spec.structure == "generic":
+            # Force no candidates for plain connectors — safer to skip
+            return QuerySpec(category_like="%", limit=1)
+        if spec.structure == "2xN" and not package_hint:
+            # 2xN is diverse; without hint, also bail
+            return QuerySpec(category_like="%", limit=1)
+        # 1xN and 2xN-with-hint both fetch broadly
+        patterns: tuple[str, ...] = ()
+        if spec.value:
+            patterns = (f"%{spec.value}%",)
+        return QuerySpec(
+            category_like="%Connector%",
+            package=None,   # post_filter handles 2xN package substring
+            description_patterns=patterns,
+            min_stock=self.min_stock,
+            limit=self.limit,
+        )
+
+    def post_filter(self, rows: list[PartRow], spec, package_hint: str) -> list[PartRow]:
+        if spec.structure == "generic":
+            return []
+        if spec.structure == "2xN":
+            if not package_hint:
+                return []
+            hint = package_hint.lower()
+            return [r for r in rows if hint in (r.package or "").lower()]
+        # 1xN — pass through
+        return rows
