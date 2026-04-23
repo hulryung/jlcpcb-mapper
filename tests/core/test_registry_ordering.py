@@ -101,9 +101,42 @@ def test_connector_not_absorbed_by_ic(tmp_path):
     """Connector lib_ids must not be routed to ic (Connector prefix excluded)."""
     r = default_registry(fp_out_dir=tmp_path / "fp")
     cat = r.lookup("Connector:Conn_01x02_Pin")
-    # Connector category not yet registered → returns None, but NOT ic
+    # Connector category registered → routes to connector, not ic
     assert cat is None or cat.name != "ic", (
         "IC catch-all must not absorb Connector lib_ids."
+    )
+
+
+# --- Connector category routing tests ---
+
+def test_connector_1xn_routes_to_connector(tmp_path):
+    """Connector_Generic:Conn_01x05_Odd_Even must route to connector category."""
+    r = default_registry(fp_out_dir=tmp_path / "fp")
+    cat = r.lookup("Connector_Generic:Conn_01x05_Odd_Even")
+    assert cat is not None
+    assert cat.name == "connector", (
+        f"Expected connector, got {cat.name!r}. "
+        "connector must be registered before ic catch-all."
+    )
+
+
+def test_connector_2xn_routes_to_connector(tmp_path):
+    """Connector_Generic:Conn_02x10_Odd_Even must route to connector category."""
+    r = default_registry(fp_out_dir=tmp_path / "fp")
+    cat = r.lookup("Connector_Generic:Conn_02x10_Odd_Even")
+    assert cat is not None
+    assert cat.name == "connector", (
+        f"Expected connector, got {cat.name!r}."
+    )
+
+
+def test_connector_usb_routes_to_connector(tmp_path):
+    """Connector_USB:USB_C_Receptacle_Palconn_UTC16-G must route to connector category."""
+    r = default_registry(fp_out_dir=tmp_path / "fp")
+    cat = r.lookup("Connector_USB:USB_C_Receptacle_Palconn_UTC16-G")
+    assert cat is not None
+    assert cat.name == "connector", (
+        f"Expected connector, got {cat.name!r}."
     )
 
 
