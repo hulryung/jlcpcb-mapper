@@ -141,3 +141,19 @@ def test_1xn_post_filter_no_hint_pass_through():
     rows = [_row("C1", "PinSocket_1x06")]
     result = src.post_filter(rows, _spec("1xN", 6), package_hint="")
     assert [r.lcsc for r in result] == ["C1"]
+
+
+def test_query_escapes_like_wildcards_in_value():
+    """User value with % or _ must be escaped before SQL LIKE."""
+    src = ConnectorSource()
+    spec = ConnectorSpec(structure="1xN", pins=5, value="Conn_01x5")
+    q = src.query(spec, package_hint="")
+    # "_" in value must be escaped to "\_" so LIKE treats it literally
+    assert q.description_patterns == (r"%Conn\_01x5%",)
+
+
+def test_query_escapes_percent_in_value():
+    src = ConnectorSource()
+    spec = ConnectorSpec(structure="1xN", pins=5, value="100%pin")
+    q = src.query(spec, package_hint="")
+    assert q.description_patterns == (r"%100\%pin%",)

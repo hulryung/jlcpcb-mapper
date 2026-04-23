@@ -266,7 +266,8 @@ class ConnectorSource:
         # 1xN and 2xN-with-hint both fetch broadly
         patterns: tuple[str, ...] = ()
         if spec.value:
-            patterns = (f"%{spec.value}%",)
+            escaped = spec.value.replace("%", r"\%").replace("_", r"\_")
+            patterns = (f"%{escaped}%",)
         return QuerySpec(
             category_like="%Connector%",
             package=None,   # post_filter handles 2xN package substring
