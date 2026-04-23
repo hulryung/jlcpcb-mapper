@@ -1,0 +1,22 @@
+# Golden regression case: 220µF/10V polarized cap — the redesign's motivating case.
+# Scorer decides; LLM not called.
+
+db_schema: |
+  CREATE TABLE parts (
+    lcsc TEXT PRIMARY KEY, category TEXT, mfr TEXT, mfr_part TEXT,
+    package TEXT, description TEXT, basic INTEGER, preferred INTEGER,
+    stock INTEGER, price REAL
+  );
+  INSERT INTO parts VALUES ('C16133','Aluminum Electrolytic','Nichicon','UWT1A221MCL1GS',
+      'D6.3','220uF 10V ±20% 6.3x5.4mm',1,0,25000,0.05);
+  INSERT INTO parts VALUES ('C471773','Aluminum Electrolytic','Other','ELEB',
+      'D6.3','220uF 10V 20%',0,0,15000,0.04);
+
+instances:
+  - reference: "C12"
+    lib_id: "Device:CP"
+    value: "220uF/10V"
+    footprint: ""
+
+tau: 0.01
+min_stock: 1000
