@@ -8,9 +8,10 @@ Use this doc to brief a future Claude Code session. Copy the "Kickoff prompt" be
 
 ```
 I'm resuming work on a jlcpcb-mapper architecture redesign that was
-completed in a previous session. All 29 planned tasks are done; the
-work lives on branch `arch-redesign` in worktree
-`/Users/dkkang/dev/jlcpcb-mapper-arch-redesign`.
+completed and merged in a previous session. All 29 planned tasks are
+done and landed on `main`.
+
+Working directory: /Users/dkkang/dev/jlcpcb-mapper
 
 Start by reading these files in order:
 1. redesign/README.md
@@ -21,10 +22,10 @@ The comprehensive handoff is in `redesign/`. The spec and plan are
 under `docs/superpowers/`.
 
 Before doing anything else, run a health check:
-- cd /Users/dkkang/dev/jlcpcb-mapper-arch-redesign
+- cd /Users/dkkang/dev/jlcpcb-mapper
 - .venv/bin/pytest -q   (expect 386 passed)
-- git log main..arch-redesign --oneline | wc -l   (expect 46)
-- git status   (expect clean)
+- git branch            (only `main` should exist)
+- git status            (expect clean)
 
 Then ask me which of the next-step options I want to pursue. Don't
 start any implementation work until I confirm.
@@ -37,7 +38,7 @@ start any implementation work until I confirm.
 - **Don't re-read the whole spec/plan from scratch** — the handoff docs in `redesign/` are condensed on purpose. Use them.
 - **Don't start implementation without confirmation** — the plan is complete; anything further is new work that needs explicit agreement.
 - **Don't try to run against the real parts.db without the user** — the `_autodetect_parts_db()` path in `commands/map_cmd.py` points at `~/Library/Application Support/kicad/9.0/...` on the user's Mac. Tests use fixtures.
-- **Don't touch `main`** — the merge is a deliberate user decision (see NEXT_STEPS.md).
+- **Don't rewrite or amend existing redesign commits on `main`** — the merge is done; new work goes on top.
 
 ---
 
@@ -46,9 +47,8 @@ start any implementation work until I confirm.
 1. **Run the health check** from the kickoff prompt. If anything fails, debug before moving on.
 2. **Read the handoff docs** — they are short by design.
 3. **Ask the user** which of the options in `NEXT_STEPS.md` to pursue.
-4. If the user says "merge" — follow `NEXT_STEPS.md` section "Decision 1".
-5. If the user says "tackle a deferred item" — look up the specific entry in `DEFERRED.md` and ask for scope confirmation before implementing.
-6. If the user says "run against my real project" — ask for the `.kicad_pro` path and walk through `run_map` with careful logging, NOT autonomously.
+4. If the user says "tackle a deferred item" — look up the specific entry in `DEFERRED.md` and ask for scope confirmation before implementing.
+5. If the user says "run against my real project" — ask for the `.kicad_pro` path and walk through `run_map` with careful logging, NOT autonomously.
 
 ---
 
@@ -78,8 +78,8 @@ Recommended reading order (skip anything already clear from context):
 
 ```bash
 # Where am I?
-cd /Users/dkkang/dev/jlcpcb-mapper-arch-redesign
-git branch --show-current         # arch-redesign
+cd /Users/dkkang/dev/jlcpcb-mapper
+git branch --show-current         # main
 git worktree list
 
 # Full test suite
@@ -109,5 +109,5 @@ ls .jlcpcb-mapper/traces/   # empty in worktree; populated after running map_cmd
 
 - **Original spec/plan** (most complete): `docs/superpowers/specs/2026-04-22-architecture-redesign.md` and `docs/superpowers/plans/2026-04-22-architecture-redesign.md`
 - **Commit-by-commit history**: `redesign/COMMITS.md` (annotated)
-- **Git log itself**: `git log main..arch-redesign --stat -p` — enormous but complete
+- **Git log itself**: `git log 13e8f57..HEAD --stat -p -- src tests` — enormous but complete (shows everything since the plan commit)
 - **Reviewer notes**: scattered in the plan file (annotated in-place after some tasks)

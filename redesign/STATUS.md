@@ -1,20 +1,21 @@
 # Status Snapshot
 
-**Last updated:** commit `26a25fe` (Task 29 — Config + README, final task of the plan)
+**Last updated:** post-merge to `main`. Tip commit `61f164d` (handoff docs). Task 29 (last plan task) is `ce1ebdc`.
 
 ## Overall
 
 | Metric | Value |
 |---|---|
-| Branch | `arch-redesign` |
-| Base | `main` (last common commit: `13e8f57` — the plan doc itself) |
-| Commits ahead of main | **46** |
+| Branch | `main` (redesign merged via fast-forward after rebase) |
+| Prior base | `13e8f57` — the original plan commit |
+| Redesign commits on main | **47** (see `COMMITS.md`) |
 | Test suite | **386 passed** (from 154 baseline; new coverage replaced the deleted legacy tests) |
 | Test collection time | ~0.3s (all unit + small-fixture integration) |
-| Regressions | 0 across all 46 commits |
+| Regressions | 0 across all 47 commits |
 | Uncommitted changes | None (clean working tree) |
 | Plan completeness | **29 / 29 tasks** |
-| Worktree | `/Users/dkkang/dev/jlcpcb-mapper-arch-redesign` |
+| Working directory | `/Users/dkkang/dev/jlcpcb-mapper` |
+| `arch-redesign` branch | deleted (merged cleanly) |
 
 ## Phase completion
 
@@ -88,7 +89,7 @@ Removed method: `PartsDB.query_candidates` (superseded by `PartsDB.execute(Query
 
 ## What's new
 
-Top-level source layout on `arch-redesign`:
+Top-level source layout on `main`:
 
 ```
 src/jlcpcb_mapper/
@@ -149,7 +150,7 @@ src/jlcpcb_mapper/
 └── default_config.yaml    # +score_tiebreak_threshold, +llm_tiebreak_top_n
 ```
 
-Tests on `arch-redesign`:
+Tests on `main`:
 
 ```
 tests/
