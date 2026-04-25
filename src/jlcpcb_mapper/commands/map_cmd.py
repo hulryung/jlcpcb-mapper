@@ -18,6 +18,7 @@ from ..report import RunReport
 from ..core.pipeline import run_pipeline, Instance
 from ..categories import default_registry
 from ..observability.writer import write_group_traces
+from ..observability.markdown_report import write_markdown_report
 
 
 def _autodetect_parts_db() -> Path:
@@ -189,4 +190,12 @@ def run_map(
     write_group_traces(decisions, traces_dir)
     log_path = proj.root / ".jlcpcb-mapper" / f"run-{ts}.json"
     report.write_json(log_path)
+    md_path = log_path.with_suffix(".md")
+    write_markdown_report(
+        decisions=decisions,
+        skipped=skipped,
+        report=report,
+        out_path=md_path,
+        project_name=project_pro.name,
+    )
     return report
