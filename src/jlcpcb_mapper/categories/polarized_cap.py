@@ -12,8 +12,10 @@ from ..components.prompt_hooks import CapPromptHook
 
 
 _PACKAGE_RULES = [
-    (r"^Capacitor_SMD:CP_Elec_(\d+\.?\d*x\d+\.?\d*)",
+    # SMD: KiCad libs use both `CP_Elec_` and `C_Elec_` for polarized SMD caps.
+    (r"^Capacitor_SMD:(?:CP_Elec_|C_Elec_)(\d+\.?\d*x\d+\.?\d*)",
      lambda m: f"D{m.group(1).split('x')[0]}"),
+    # THT: keep the `mm` suffix as a sentinel so the source can force THT.
     (r"^Capacitor_THT:CP_Radial_D(\d+\.?\d*)mm",
      lambda m: f"D{m.group(1)}mm"),
 ]

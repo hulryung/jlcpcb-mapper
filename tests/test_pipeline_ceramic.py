@@ -77,7 +77,7 @@ def test_10uf_ceramic_selects_basic_builtin_footprint(db, tmp_path):
             dnp=False, on_board=True, in_bom=True,
         ),
     ]
-    decisions = run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=instances,
         db=db,
         llm=_FakeLLM(),

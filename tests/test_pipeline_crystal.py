@@ -98,7 +98,7 @@ def test_16mhz_smd3225_selects_basic(db, tmp_path):
             dnp=False, on_board=True, in_bom=True,
         ),
     ]
-    decisions = run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=instances,
         db=db,
         llm=_FakeLLM(),
@@ -130,7 +130,7 @@ def test_crystal_variant_lib_id_matched(db, tmp_path):
             dnp=False, on_board=True, in_bom=True,
         ),
     ]
-    decisions = run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=instances,
         db=db,
         llm=_FakeLLM(),
@@ -158,7 +158,7 @@ def test_crystal_no_footprint_returns_failed(db, tmp_path):
             dnp=False, on_board=True, in_bom=True,
         ),
     ]
-    decisions = run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=instances,
         db=db,
         llm=_FakeLLM(),

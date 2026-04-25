@@ -61,7 +61,7 @@ def test_220uf_10v_selects_basic_exact_voltage(db, tmp_path):
                  value="220uF/10V", footprint="",
                  dnp=False, on_board=True, in_bom=True),
     ]
-    decisions = run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=instances,
         db=db,
         llm=_FakeLLM(),

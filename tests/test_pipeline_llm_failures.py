@@ -84,11 +84,12 @@ def _run_ic(db, tmp_path, llm):
         footprint="Package_QFP:LQFP-32_7x7mm_P0.8mm",  # pre-existing, skips resolver
         dnp=False, on_board=True, in_bom=True,
     )
-    return run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=[inst], db=db, llm=llm, hints="",
         score_tiebreak_threshold=0.01, llm_tiebreak_top_n=5,
         min_stock=1000, fp_out_dir=tmp_path / "fp",
     )
+    return decisions
 
 
 def _get_decide_event(decision):

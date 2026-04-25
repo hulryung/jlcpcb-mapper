@@ -66,7 +66,7 @@ def test_golden(golden_case, tmp_path, request, monkeypatch):
     ]
     llm = _DeterministicLLM(case.get("llm_responses", {}))
 
-    decisions = run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=instances,
         db=PartsDB(dbp),
         llm=llm,

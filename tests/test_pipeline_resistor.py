@@ -87,7 +87,7 @@ def test_10k_with_existing_footprint_skips_resolver(db, tmp_path):
             dnp=False, on_board=True, in_bom=True,
         ),
     ]
-    decisions = run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=instances,
         db=db,
         llm=_FakeLLM(),
@@ -119,7 +119,7 @@ def test_10k_empty_footprint_uses_builtin_map(db, tmp_path):
             dnp=False, on_board=True, in_bom=True,
         ),
     ]
-    decisions = run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=instances,
         db=db,
         llm=_FakeLLM(),

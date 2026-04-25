@@ -113,7 +113,7 @@ def run_map(
     )
 
     # Run pipeline
-    decisions = run_pipeline(
+    decisions, skipped = run_pipeline(
         instances=instances,
         db=PartsDB(parts_db_path),
         llm=llm,
@@ -125,6 +125,21 @@ def run_map(
         registry=registry,
         concurrency=config.llm.concurrency,
     )
+
+    # Record skipped (unmatched lib_id or value-parse failed) as failures so
+    # users can see what the tool didn't even attempt.
+    from collections import defaultdict as _dd
+    skipped_by_reason: dict[tuple[str, str], list[str]] = _dd(list)
+    for s in skipped:
+        key = (s.kind, s.category_name or s.instance.lib_id)
+        skipped_by_reason[key].append(s.instance.reference)
+    for (kind, bucket), refs in skipped_by_reason.items():
+        report.add_failure(
+            kind=kind,
+            detail=f"{bucket} refs={sorted(refs)}",
+        )
+        for _ in refs:
+            report.record_source("failed")
 
     # Build edits from decisions
     ref_to_sch = {t.inst.reference: t.sch_path for t in targets}

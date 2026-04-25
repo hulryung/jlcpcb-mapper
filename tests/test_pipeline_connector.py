@@ -111,7 +111,7 @@ def test_1xn_llm_selects_c1(db, tmp_path):
             dnp=False, on_board=True, in_bom=True,
         ),
     ]
-    decisions = run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=instances,
         db=db,
         llm=llm,
@@ -147,7 +147,7 @@ def test_1xn_category_is_connector(db, tmp_path):
             dnp=False, on_board=True, in_bom=True,
         ),
     ]
-    decisions = run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=instances,
         db=db,
         llm=llm,
@@ -175,7 +175,7 @@ def test_2xn_without_package_hint_fails_no_candidates(db, tmp_path):
             dnp=False, on_board=True, in_bom=True,
         ),
     ]
-    decisions = run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=instances,
         db=db,
         llm=_FakeLLM(),
@@ -207,7 +207,7 @@ def test_generic_connector_fails_no_candidates(db, tmp_path):
             dnp=False, on_board=True, in_bom=True,
         ),
     ]
-    decisions = run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=instances,
         db=db,
         llm=_FakeLLM(),

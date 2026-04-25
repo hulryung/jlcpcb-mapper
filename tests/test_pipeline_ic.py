@@ -111,7 +111,7 @@ def test_stm32_lqfp32_llm_selects_c1(db, tmp_path):
             dnp=False, on_board=True, in_bom=True,
         ),
     ]
-    decisions = run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=instances,
         db=db,
         llm=llm,
@@ -146,7 +146,7 @@ def test_ic_no_footprint_returns_failed(db, tmp_path):
             dnp=False, on_board=True, in_bom=True,
         ),
     ]
-    decisions = run_pipeline(
+    decisions, _skipped = run_pipeline(
         instances=instances,
         db=db,
         llm=_FakeLLM(),

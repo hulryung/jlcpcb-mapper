@@ -62,10 +62,24 @@ class PolarizedCapSource:
 
     def post_filter(self, rows: list[PartRow], spec, package_hint: str) -> list[PartRow]:
         hint = (package_hint or "").lower()
+        # A `mm` suffix in the hint (e.g. "D6.3mm") means the KiCad symbol was
+        # wired to a `Capacitor_THT:CP_Radial_...` footprint → caller wants a
+        # through-hole part. Otherwise default to SMD (covers KiCad SMD libs
+        # and the stripped-footprint case where `package_hint` is the default).
+        want_tht = hint.endswith("mm")
+        # Normalize hint for diameter substring match: drop trailing "mm".
+        pkg_token = hint[:-2] if want_tht else hint
         out: list[PartRow] = []
         required_v = spec.voltage.magnitude if spec.voltage is not None else None
         for r in rows:
-            if hint and hint not in (r.package or "").lower():
+            cat = (r.category or "").lower()
+            if want_tht:
+                if "leaded" not in cat:
+                    continue
+            else:
+                if "leaded" in cat:
+                    continue
+            if pkg_token and pkg_token not in (r.package or "").lower():
                 continue
             if required_v is not None:
                 voltages = _extract_voltage_numbers(r.description or "")
@@ -122,8 +136,30 @@ class CeramicCapSource:
         return rows
 
 
+_CURRENT_TOKEN = re.compile(r"(?<![A-Za-z0-9])(\d+(?:\.\d+)?)\s*(m)?A(?![A-Za-z])")
+
+
+def _extract_min_current_a(description: str | None) -> float | None:
+    """Return the smallest current rating found in a part description (in amps).
+
+    Multiple values mean (continuous, saturation) — the smallest is the
+    binding rating for sizing purposes.
+    """
+    if not description:
+        return None
+    out: list[float] = []
+    for m in _CURRENT_TOKEN.finditer(description):
+        v = float(m.group(1))
+        if m.group(2):  # 'm' prefix → milliamps
+            v /= 1000.0
+        out.append(v)
+    return min(out) if out else None
+
+
 class InductorSource:
-    """Inductors. Exact package match when hint provided + description LIKE on value."""
+    """Inductors. When `current_a` is in the spec, the package narrowing is
+    relaxed (high-current parts are typically larger than the default 0805
+    hint) and the post-filter rejects under-rated rows."""
 
     def __init__(self, min_stock: int = 0, limit: int = 50):
         self.min_stock = min_stock
@@ -135,10 +171,54 @@ class InductorSource:
             # Normalize µ/μ → u for DB description matching
             normalized = _normalize_micro(spec.value.display())
             patterns = (f"%{normalized}%",)
+        # When a current rating is required, broaden the search across
+        # packages so we can find power-inductor sizes that don't match the
+        # default 0805 hint. The post_filter narrows back to the hint when
+        # qualifying rows exist there.
+        has_current = getattr(spec, "current_a", None) is not None
         return QuerySpec(
             category_like="%Inductor%",
-            package=package_hint or None,  # exact package match when hint provided
+            package=None if has_current else (package_hint or None),
             description_patterns=patterns,
+            min_stock=self.min_stock,
+            limit=self.limit * 4 if has_current else self.limit,
+        )
+
+    def post_filter(self, rows: list[PartRow], spec, package_hint: str) -> list[PartRow]:
+        required = getattr(spec, "current_a", None)
+        if required is None:
+            return rows
+        qualified = [
+            r for r in rows
+            if (_extract_min_current_a(r.description) or 0.0) >= required
+        ]
+        if not qualified:
+            return []
+        if package_hint:
+            h = package_hint.lower()
+            narrow = [r for r in qualified if h in (r.package or "").lower()]
+            if narrow:
+                return narrow
+        return qualified
+
+
+class FerriteBeadSource:
+    """Ferrite beads. Category match + description LIKE on '<imp>Ω@<freq>MHz'."""
+
+    def __init__(self, min_stock: int = 0, limit: int = 50):
+        self.min_stock = min_stock
+        self.limit = limit
+
+    def query(self, spec, package_hint: str) -> QuerySpec:
+        imp = spec.impedance_ohms
+        freq = spec.test_freq_mhz
+        imp_tok = f"{imp:g}"
+        freq_tok = f"{freq:g}"
+        pattern = f"%{imp_tok}Ω@{freq_tok}MHz%"
+        return QuerySpec(
+            category_like="Ferrite Beads",
+            package=package_hint or None,
+            description_patterns=(pattern,),
             min_stock=self.min_stock,
             limit=self.limit,
         )

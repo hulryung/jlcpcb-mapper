@@ -8,6 +8,7 @@ from ..categories.spec.inductor import InductorSpec
 from ..categories.spec.led import LEDSpec
 from ..categories.spec.crystal import CrystalSpec
 from ..categories.spec.ic import ICSpec
+from ..categories.spec.ferrite_bead import FerriteBeadSpec
 
 
 _CAP_RE = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*([munpµu]?)[Ff]?\s*$", re.IGNORECASE)
@@ -69,7 +70,7 @@ class ResistorValueParser:
         return ResistorSpec(value=Value(ohms, "Ω"))
 
 
-_L_RE = re.compile(r"^(\d+(?:\.\d+)?)\s*([munpµμ]?)H$", re.IGNORECASE)
+_L_RE = re.compile(r"^(\d+(?:\.\d+)?)\s*([munpµμ]?)H\b", re.IGNORECASE)
 _L_UNIT_CANON = {"u": "µ", "µ": "µ", "μ": "µ", "m": "m", "n": "n", "p": "p", "": ""}
 
 
@@ -77,13 +78,23 @@ class InductorValueParser:
     """Parse inductor value strings and return InductorSpec or None.
 
     Accepted forms: "33uH", "33µH", "33μH" (Greek mu), "4.7uH", "10nH", "1mH", "33H".
+    Also accepts a trailing current spec suffix, e.g. "4.7uH/2A", "33uH/3A";
+    the suffix is ignored.
     Returns None on junk (empty, "foobar", "10uF").
     """
 
     def parse(self, raw: str, *, lib_id: str | None = None) -> InductorSpec | None:
         if not raw or not raw.strip():
             return None
-        m = _L_RE.match(raw.strip())
+        s = raw.strip()
+        # Optional trailing current rating, e.g. "/2A", "/350mA", "/0.5A"
+        current_a: float | None = None
+        m_curr = re.search(r"/\s*(\d+(?:\.\d+)?)\s*(m)?A\b", s, re.IGNORECASE)
+        if m_curr:
+            current_a = float(m_curr.group(1))
+            if m_curr.group(2):
+                current_a /= 1000.0
+        m = _L_RE.match(s)
         if not m:
             return None
         mag = float(m.group(1))
@@ -94,7 +105,31 @@ class InductorValueParser:
             unit = "H"
         else:
             unit = f"{canon_prefix}H"
-        return InductorSpec(value=Value(mag, unit))
+        return InductorSpec(value=Value(mag, unit), current_a=current_a)
+
+
+_FB_RE = re.compile(
+    r"^\s*(\d+(?:\.\d+)?)(k)?\s*(?:Ω|Ohm|R)?\s*[/@]\s*(\d+(?:\.\d+)?)\s*MHz\s*$",
+    re.IGNORECASE,
+)
+
+
+class FerriteBeadValueParser:
+    """Parse ferrite bead impedance value and return FerriteBeadSpec or None.
+
+    Accepted forms: "100/100MHz", "600/100MHz", "1k/100MHz",
+                    "100Ω@100MHz", "100 Ohm @ 100 MHz".
+    """
+
+    def parse(self, raw: str, *, lib_id: str | None = None) -> FerriteBeadSpec | None:
+        if not raw or not raw.strip():
+            return None
+        m = _FB_RE.match(raw.strip())
+        if not m:
+            return None
+        imp = float(m.group(1)) * (1000.0 if m.group(2) else 1.0)
+        freq = float(m.group(3))
+        return FerriteBeadSpec(impedance_ohms=imp, test_freq_mhz=freq)
 
 
 class LEDValueParser:

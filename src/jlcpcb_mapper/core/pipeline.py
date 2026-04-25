@@ -54,6 +54,19 @@ class Decision:
     failure: str | None = None
 
 
+@dataclass
+class Skipped:
+    """An eligible instance that never reached grouping.
+
+    kind is one of:
+      - "unmatched_lib_id": no registered category claimed the lib_id
+      - "parse_failed":     the category's value_parser returned None
+    """
+    instance: "Instance"
+    kind: str
+    category_name: str | None
+
+
 def run_pipeline(
     *,
     instances: list[Instance],
@@ -66,19 +79,22 @@ def run_pipeline(
     fp_out_dir: Path,
     registry: Registry | None = None,
     concurrency: int = 4,
-) -> list[Decision]:
+) -> tuple[list[Decision], list[Skipped]]:
     reg = registry or default_registry(fp_out_dir=fp_out_dir)
 
     # Stage 1: per-instance match + parse + extract
     targeted: list[Targeted] = []
+    skipped: list[Skipped] = []
     for inst in instances:
         if not inst.on_board or not inst.value:
             continue
         cat = reg.lookup(inst.lib_id)
         if cat is None:
+            skipped.append(Skipped(inst, "unmatched_lib_id", None))
             continue
         spec = cat.value_parser.parse(inst.value, lib_id=inst.lib_id) if cat.value_parser else None
         if spec is None:
+            skipped.append(Skipped(inst, "parse_failed", cat.name))
             continue
         pkg = None
         if inst.footprint and cat.package_extractor:
@@ -109,7 +125,7 @@ def run_pipeline(
         for f in as_completed(futs):
             decisions.append(f.result())
     decisions.sort(key=lambda d: d.group.instances[0].reference)
-    return decisions
+    return decisions, skipped
 
 
 def _process_group(g: Group, db, llm, hints, tau, top_n, min_stock) -> Decision:
