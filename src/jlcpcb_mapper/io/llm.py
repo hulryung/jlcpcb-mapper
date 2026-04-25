@@ -1,7 +1,26 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import json
+import re
 import subprocess
+
+
+_FENCE_RE = re.compile(r"^\s*```(?:json|JSON)?\s*\n(.*?)\n\s*```\s*$", re.DOTALL)
+
+
+def _strip_json_fence(s: str) -> str:
+    """Strip a Markdown ```json ... ``` fence if the model wrapped its output.
+
+    Haiku 4.5 sometimes wraps short JSON outputs in fenced code blocks even
+    when explicitly asked for raw JSON. The leading backtick lands at column
+    0 and trips json.loads() with "Expecting value: line 1 column 1 (char 0)".
+    """
+    if not s:
+        return s
+    m = _FENCE_RE.match(s)
+    if m:
+        return m.group(1).strip()
+    return s.strip()
 
 
 class LLMError(Exception):
@@ -44,7 +63,11 @@ class ClaudeClient:
             try:
                 outer = json.loads(cp.stdout)
                 inner = outer.get("result") or outer.get("content") or cp.stdout
-                data = json.loads(inner) if isinstance(inner, str) else inner
+                if isinstance(inner, str):
+                    inner = _strip_json_fence(inner)
+                    data = json.loads(inner)
+                else:
+                    data = inner
                 if not isinstance(data, dict):
                     last_err = f"expected dict, got {type(data).__name__}"
                     continue
