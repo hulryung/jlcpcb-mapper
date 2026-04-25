@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges">
+  <rect width="32" height="32" fill="#f3eed9"/>
+  <rect x="2" y="2" width="28" height="28" fill="none" stroke="#1c1d1a" stroke-width="2"/>
+  <!-- copper trace tracks like a tiny PCB -->
+  <path d="M 6 11 L 14 11 L 14 21 L 26 21" stroke="#b85e2c" stroke-width="2" fill="none" stroke-linecap="square"/>
+  <circle cx="6" cy="11" r="1.6" fill="#b85e2c"/>
+  <circle cx="26" cy="21" r="1.6" fill="#b85e2c"/>
+</svg>

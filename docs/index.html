@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>jlcpcb-mapper · KiCad → JLCPCB part mapping</title>
+  <meta name="description" content="LLM-assisted part mapping from KiCad schematics to JLCPCB's LCSC catalog. Scores commodity passives deterministically; sends only the close calls to Claude.">
+  <meta property="og:title" content="jlcpcb-mapper">
+  <meta property="og:description" content="LLM-assisted part mapping from KiCad schematics to JLCPCB's LCSC catalog.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://hulryung.github.io/jlcpcb-mapper/">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============ TITLE BLOCK (engineering drawing style) ============ -->
+<header class="title-block" aria-label="document metadata">
+  <div class="tb-grid">
+    <div class="tb-cell tb-name">
+      <span class="tb-label">drawing</span>
+      <span class="tb-value">jlcpcb-mapper</span>
+    </div>
+    <div class="tb-cell">
+      <span class="tb-label">type</span>
+      <span class="tb-value">cli tool</span>
+    </div>
+    <div class="tb-cell">
+      <span class="tb-label">target</span>
+      <span class="tb-value">kicad 9 + jlcpcb</span>
+    </div>
+    <div class="tb-cell">
+      <span class="tb-label">rev</span>
+      <span class="tb-value">0.1</span>
+    </div>
+    <div class="tb-cell tb-link">
+      <a href="https://github.com/hulryung/jlcpcb-mapper" rel="noopener">
+        <span class="tb-label">source</span>
+        <span class="tb-value">github ↗</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <p class="eyebrow">// reads empty-footprint symbols · writes LCSC + KiCad footprint</p>
+  <h1>
+    LLM-assisted part mapping<br>
+    from <span class="hl">KiCad schematics</span><br>
+    to <span class="hl">JLCPCB's LCSC catalog</span>.
+  </h1>
+  <p class="lead">
+    Scores candidates against a local parts catalog, asks Claude Code
+    to break ties on the close calls, then writes the LCSC and KiCad
+    footprint back into the schematic — with a human-readable Markdown
+    report that explains <em>why</em> each part was picked.
+  </p>
+  <div class="hero-cta">
+    <a class="btn btn-primary" href="https://github.com/hulryung/jlcpcb-mapper">
+      → repository
+    </a>
+    <a class="btn" href="#install">install</a>
+    <a class="btn-text" href="https://github.com/hulryung/jlcpcb-mapper/blob/main/README.ko.md">
+      한국어 README
+    </a>
+  </div>
+  <!-- dimension line decoration, like an engineering drawing callout -->
+  <div class="dimension" aria-hidden="true">
+    <span class="dim-tick"></span>
+    <span class="dim-line"></span>
+    <span class="dim-text">~150 symbols · ~30s end-to-end · ~76% exact match</span>
+    <span class="dim-line"></span>
+    <span class="dim-tick"></span>
+  </div>
+</section>
+
+<!-- ============ §01 WHAT ============ -->
+<section class="section" id="what">
+  <header class="section-head">
+    <span class="section-num">§ 01</span>
+    <h2>What this saves you from</h2>
+  </header>
+  <div class="section-body two-col">
+    <div class="prose">
+      <p>
+        Hand-mapping every passive, IC, and connector in a KiCad project
+        to a JLCPCB part is tedious and easy to get wrong — same value,
+        different package; correct package, EOL stock; SMD label, leaded
+        part.
+      </p>
+      <p>
+        This tool automates the mechanical 80% — resistors, ceramic caps,
+        common diodes and MOSFETs by MPN — and surfaces the close calls
+        as a Markdown review document with LCSC.com links and the
+        alternatives that were considered. Reviewing the report takes
+        a fraction of the time of picking each part by hand.
+      </p>
+      <p class="footnote">
+        Out of scope on purpose: power-only symbols, mounting holes,
+        DNP parts, and anything you've explicitly pinned in
+        <code>manual_lcsc</code>.
+      </p>
+    </div>
+    <aside class="callout">
+      <div class="callout-label">measured · 150-symbol board</div>
+      <ul class="callout-stats">
+        <li>
+          <strong>76.6<span class="pct">%</span></strong>
+          <span>exact LCSC match against hand-picked baseline</span>
+        </li>
+        <li>
+          <strong>4.1<span class="pct">%</span></strong>
+          <span>same value+package, different LCSC</span>
+        </li>
+        <li>
+          <strong>1.4<span class="pct">%</span></strong>
+          <span>genuine miss requiring human review</span>
+        </li>
+        <li>
+          <strong>17.9<span class="pct">%</span></strong>
+          <span>not in scope (connectors, mech, manual)</span>
+        </li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ §02 PIPELINE ============ -->
+<section class="section" id="pipeline">
+  <header class="section-head">
+    <span class="section-num">§ 02</span>
+    <h2>How it picks each part</h2>
+  </header>
+  <div class="section-body">
+    <p class="prose">
+      Symbols are routed by <code>lib_id</code> into a category, grouped
+      by category + spec + package hint, and run through a five-stage
+      pipeline. Each stage either narrows the candidate set or commits
+      to a pick — the LLM is only consulted when deterministic scoring
+      can't decide.
+    </p>
+
+    <div class="pipeline" role="list" aria-label="pipeline stages">
+      <div class="stage" role="listitem">
+        <div class="stage-id">01 · match</div>
+        <div class="stage-body">
+          Route by <code>lib_id</code> → category
+          (<code>Device:R</code> → resistor, <code>Device:CP_*</code>
+          → polarized_capacitor, anything else with a <code>:</code>
+          → ic).
+        </div>
+      </div>
+      <div class="stage-arrow" aria-hidden="true">→</div>
+      <div class="stage" role="listitem">
+        <div class="stage-id">02 · parse</div>
+        <div class="stage-body">
+          Extract a structured spec from the Value field.
+          <code>"4.7uH/2A"</code> → inductance + minimum current.
+        </div>
+      </div>
+      <div class="stage-arrow" aria-hidden="true">→</div>
+      <div class="stage" role="listitem">
+        <div class="stage-id">03 · query</div>
+        <div class="stage-body">
+          Pull candidates from <code>parts.db</code> by category,
+          package, description LIKE on the value, min-stock floor.
+        </div>
+      </div>
+      <div class="stage-arrow" aria-hidden="true">→</div>
+      <div class="stage" role="listitem">
+        <div class="stage-id">04 · decide</div>
+        <div class="stage-body">
+          <span class="path-badge path-single">single</span>
+          one candidate &nbsp;·&nbsp;
+          <span class="path-badge path-score">score</span>
+          deterministic ranking &nbsp;·&nbsp;
+          <span class="path-badge path-llm">llm</span>
+          tiebreak via Claude
+        </div>
+      </div>
+      <div class="stage-arrow" aria-hidden="true">→</div>
+      <div class="stage" role="listitem">
+        <div class="stage-id">05 · resolve</div>
+        <div class="stage-body">
+          KiCad built-in footprint for common SMD passives; on-the-fly
+          EasyEDA download for everything else.
+        </div>
+      </div>
+    </div>
+
+    <p class="prose footnote">
+      <strong>Manual override</strong> bypasses the pipeline entirely:
+      pin a specific LCSC by reference designator or by Value field for
+      subjective parts (USB-C receptacles, pogo pins, tactile switches,
+      barrel jacks).
+    </p>
+  </div>
+</section>
+
+<!-- ============ §03 SAMPLE REPORT ============ -->
+<section class="section" id="report">
+  <header class="section-head">
+    <span class="section-num">§ 03</span>
+    <h2>What the report looks like</h2>
+  </header>
+  <div class="section-body">
+    <p class="prose">
+      Every <code>map</code> run writes a Markdown review document next
+      to your project. One section per group, each with the rationale,
+      an LCSC.com link, the chosen part's spec, and the alternatives
+      that came close.
+    </p>
+
+    <article class="report-card" aria-label="sample report entry">
+      <header class="report-header">
+        <span class="report-meta">.jlcpcb-mapper/run-2026-04-25T16-07-55.md</span>
+        <span class="report-badge">markdown</span>
+      </header>
+
+      <h3 class="report-title">resistor 4700Ω 0402 — 20 refs</h3>
+      <div class="ref-list">R20, R21, R22, R23, R24, R50, R52, R56 … +12 more</div>
+
+      <p class="selected">
+        <span class="selected-label">Selected</span>
+        <a href="https://www.lcsc.com/product-detail/C25744.html" rel="noopener nofollow"><code>C25744</code></a>
+        <span class="dash">—</span>
+        UNI-ROYAL <code>0402WGF4701TCE</code>
+      </p>
+
+      <ul class="part-spec">
+        <li><strong>Package</strong> <code>0402</code></li>
+        <li><strong>Tier</strong> <span class="tier tier-basic">Basic</span></li>
+        <li><strong>Stock</strong> 4.4M</li>
+        <li><strong>Price</strong> $0.0009</li>
+      </ul>
+
+      <p class="rationale">
+        <span class="rat-key">Why this part?</span>
+        Score <code>1.00</code> vs runner-up <code>0.40</code> —
+        Basic-tier (vs Extended), higher stock (4.4M vs 60k).
+      </p>
+
+      <details class="alts">
+        <summary>3 alternatives considered</summary>
+        <table class="alts-table">
+          <thead>
+            <tr>
+              <th>LCSC</th><th>Mfr Part</th><th>Tier</th><th>Stock</th><th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>C123456</code></td><td>YAGEO RC0402FR-074K7L</td>
+              <td><span class="tier tier-extended">Ext</span></td>
+              <td>60k</td><td>0.40</td>
+            </tr>
+            <tr>
+              <td><code>C25900</code></td><td>UNI-ROYAL 0402WGF4701TCE</td>
+              <td><span class="tier tier-extended">Ext</span></td>
+              <td>1.6M</td><td>0.40</td>
+            </tr>
+            <tr>
+              <td><code>C137970</code></td><td>FH 0402WGF4701TCE</td>
+              <td><span class="tier tier-extended">Ext</span></td>
+              <td>980k</td><td>0.40</td>
+            </tr>
+          </tbody>
+        </table>
+      </details>
+    </article>
+
+    <p class="prose footnote">
+      The <span class="path-badge path-llm">llm</span> path passes
+      Claude's one-sentence reason through verbatim
+      (<em>"Closest SMD form factor matching the existing footprint"</em>);
+      the <span class="path-badge path-score">score</span> path
+      generates the rationale from the score breakdown deltas.
+    </p>
+  </div>
+</section>
+
+<!-- ============ §04 INSTALL ============ -->
+<section class="section" id="install">
+  <header class="section-head">
+    <span class="section-num">§ 04</span>
+    <h2>Install &amp; run</h2>
+  </header>
+  <div class="section-body">
+    <p class="prose">
+      Three commands to a mapped board. The tool refuses to run on a
+      dirty git tree, so <code>git diff</code> is always your final
+      review step.
+    </p>
+
+    <pre class="code-block" aria-label="installation commands"><code><span class="cmt"># 1. install</span>
+<span class="prompt">$</span> pipx install jlcpcb-mapper
+
+<span class="cmt"># 2. one-time: build the parts catalog (~1 GB → slim 100 MB DB)</span>
+<span class="prompt">$</span> jlcpcb-mapper fetch-db
+
+<span class="cmt"># 3. inside your KiCad project</span>
+<span class="prompt">$</span> jlcpcb-mapper init                          <span class="cmt"># scaffolds jlcpcb-mapper.yaml</span>
+<span class="prompt">$</span> jlcpcb-mapper map my-project.kicad_pro      <span class="cmt"># writes LCSC + footprint</span>
+<span class="prompt">$</span> open .jlcpcb-mapper/run-&lt;ts&gt;.md             <span class="cmt"># review the rationale doc</span>
+<span class="prompt">$</span> git diff                                    <span class="cmt"># final eyeball</span></code></pre>
+
+    <p class="prose footnote">
+      Atomic schematic writes with timestamped backups in
+      <code>.jlcpcb-mapper/backups/&lt;ts&gt;/</code>. Per-group traces
+      (match → parse → query → decide → resolve) recorded under
+      <code>.jlcpcb-mapper/traces/&lt;ts&gt;/groups.jsonl</code>.
+    </p>
+  </div>
+</section>
+
+<!-- ============ §05 STATUS / ROADMAP ============ -->
+<section class="section section-tight" id="status">
+  <header class="section-head">
+    <span class="section-num">§ 05</span>
+    <h2>Status &amp; roadmap</h2>
+  </header>
+  <div class="section-body two-col">
+    <div class="prose">
+      <h3 class="sub">Today (v0.1)</h3>
+      <p>
+        Validated end-to-end against a real KiCad project (≈150 eligible
+        symbols, ~76% exact-match against hand-picked baseline). Supports
+        resistor, ceramic / polarized capacitor, inductor, ferrite bead,
+        LED, crystal, connector, and a catch-all IC category.
+      </p>
+    </div>
+    <div class="prose">
+      <h3 class="sub">Next</h3>
+      <p>
+        <strong>Schematic-context-aware part selection.</strong> The
+        decision today uses only the symbol's local fields. Net topology,
+        voltage-domain inference, and per-net current estimates would
+        let the LLM tiebreak with full circuit context — "this 4.7 µH
+        inductor sits on the switcher's output, so it needs ≥2× the
+        load rating."
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER / COLOPHON ============ -->
+<footer class="colophon" aria-label="colophon">
+  <div class="colo-grid">
+    <div>
+      <span class="colo-label">repository</span>
+      <a href="https://github.com/hulryung/jlcpcb-mapper">github.com/hulryung/jlcpcb-mapper</a>
+    </div>
+    <div>
+      <span class="colo-label">acknowledgments</span>
+      parts.db schema and JLCPCB feed via
+      <a href="https://github.com/bouni/kicad-jlcpcb-tools">kicad-jlcpcb-tools</a>
+      and
+      <a href="https://github.com/yaqwsx/jlcparts">yaqwsx/jlcparts</a>.
+    </div>
+    <div>
+      <span class="colo-label">readme</span>
+      <a href="https://github.com/hulryung/jlcpcb-mapper/blob/main/README.md">en</a>
+      &nbsp;·&nbsp;
+      <a href="https://github.com/hulryung/jlcpcb-mapper/blob/main/README.ko.md">ko</a>
+    </div>
+    <div>
+      <span class="colo-label">version</span>
+      <code>0.1</code>
+    </div>
+  </div>
+  <div class="colo-mark" aria-hidden="true">
+    <span>jlcpcb-mapper</span>
+    <span class="dash">—</span>
+    <span>cli tool · KiCad 9 · MIT</span>
+  </div>
+</footer>
+
+</body>
+</html>
