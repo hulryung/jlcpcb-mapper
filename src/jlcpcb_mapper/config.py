@@ -39,6 +39,12 @@ class DownloadSettings:
     auto_register_fp_lib_table: bool
 
 @dataclass
+class ManualLCSC:
+    by_reference: dict
+    by_value: dict
+
+
+@dataclass
 class Config:
     parts_db: str | None
     llm: LLMSettings
@@ -47,6 +53,7 @@ class Config:
     download: DownloadSettings
     kicad_footprint_map_overrides: dict
     hints: str
+    manual_lcsc: ManualLCSC
     score_tiebreak_threshold: float = 0.1
     llm_tiebreak_top_n: int = 5
     _used_defaults_only: bool = False
@@ -65,6 +72,7 @@ def load_config(path: str | Path) -> Config:
     else:
         used_defaults = True
     merged = _deep_merge(defaults, user)
+    manual_raw = merged.get("manual_lcsc") or {}
     return Config(
         parts_db=merged.get("parts_db"),
         llm=LLMSettings(**merged["llm"]),
@@ -73,6 +81,10 @@ def load_config(path: str | Path) -> Config:
         download=DownloadSettings(**merged["download"]),
         kicad_footprint_map_overrides=merged["kicad_footprint_map_overrides"],
         hints=merged["hints"],
+        manual_lcsc=ManualLCSC(
+            by_reference=dict(manual_raw.get("by_reference") or {}),
+            by_value=dict(manual_raw.get("by_value") or {}),
+        ),
         score_tiebreak_threshold=merged.get("score_tiebreak_threshold", 0.1),
         llm_tiebreak_top_n=merged.get("llm_tiebreak_top_n", 5),
         _used_defaults_only=used_defaults,

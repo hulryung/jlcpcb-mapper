@@ -16,6 +16,7 @@ from ..io.llm import ClaudeClient
 from ..preflight import run_preflight, lib_id_coverage_report
 from ..report import RunReport
 from ..core.pipeline import run_pipeline, Instance
+from ..core.manual import resolve_manual_overrides
 from ..categories import default_registry
 from ..observability.writer import write_group_traces
 from ..observability.markdown_report import write_markdown_report
@@ -87,11 +88,36 @@ def run_map(
 
     # Select targets (honors fill_lcsc_only, include_dnp, skips power/DNP/no-footprint logic)
     targets = select_targets(proj, fill_lcsc_only=fill_lcsc_only, include_dnp=include_dnp)
+
+    # User-supplied overrides apply to any empty-LCSC eligible symbol,
+    # regardless of whether it has a footprint — manual picks are about
+    # *part identity*, not the no-footprint trigger that drives the
+    # auto pipeline. Resolve those first; the pipeline will skip the
+    # refs that manual claimed.
+    all_lcsc_targets = select_targets(proj, fill_lcsc_only=True, include_dnp=include_dnp)
+    db_main = PartsDB(parts_db_path)
+    manual_instances = [
+        Instance(
+            sch_path=t.sch_path, reference=t.inst.reference, lib_id=t.inst.lib_id,
+            value=t.inst.value, footprint=t.inst.footprint,
+            dnp=t.inst.dnp, on_board=t.inst.on_board, in_bom=t.inst.in_bom,
+        )
+        for t in all_lcsc_targets
+    ]
+    manual_resolution = resolve_manual_overrides(manual_instances, config.manual_lcsc, db_main)
+    for lcsc, refs in manual_resolution.unknown_lcscs:
+        report.add_failure(
+            kind="manual_unknown_lcsc",
+            detail=f"manual override LCSC {lcsc} not found in parts.db; refs={sorted(refs)}",
+        )
+
+    # Pipeline targets exclude refs claimed by manual overrides.
+    auto_targets = [t for t in targets if t.inst.reference not in manual_resolution.matched_refs]
     report.filtered_in = len(targets)
-    if not targets:
+    if not auto_targets and not manual_resolution.decisions:
         return report
 
-    # Build pipeline Instances from targets
+    # Build pipeline Instances from auto targets
     instances = [
         Instance(
             sch_path=t.sch_path,
@@ -103,7 +129,7 @@ def run_map(
             on_board=t.inst.on_board,
             in_bom=t.inst.in_bom,
         )
-        for t in targets
+        for t in auto_targets
     ]
 
     # LLM client
@@ -142,8 +168,13 @@ def run_map(
         for _ in refs:
             report.record_source("failed")
 
+    # Merge manual override decisions into the pipeline output so they
+    # flow through report writing, edits, and the Markdown rendering on
+    # the same code path.
+    decisions = list(manual_resolution.decisions) + list(decisions)
+
     # Build edits from decisions
-    ref_to_sch = {t.inst.reference: t.sch_path for t in targets}
+    ref_to_sch = {t.inst.reference: t.sch_path for t in all_lcsc_targets}
     edits_by_sch: dict[Path, list] = defaultdict(list)
     for d in decisions:
         # Record source in RunReport

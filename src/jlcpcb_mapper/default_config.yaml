@@ -31,6 +31,16 @@ download:
   download_3d_models: false
   auto_register_fp_lib_table: true
 kicad_footprint_map_overrides: {}
+
+# Pin a specific LCSC to symbols whose part choice is subjective or
+# project-specific (connectors, switches, mechanical-fit parts). The
+# pipeline writes the LCSC directly without scoring/LLM. by_reference
+# (exact ref designator) wins over by_value (matches the symbol's Value
+# field). Existing schematic footprints are preserved.
+manual_lcsc:
+  by_reference: {}
+  by_value: {}
+
 hints: |
   - Prefer Basic parts with high stock.
   - Avoid parts with stock < 10000 (EOL risk).

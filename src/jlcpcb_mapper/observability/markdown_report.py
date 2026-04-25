@@ -157,7 +157,22 @@ def _llm_rationale(decision) -> str:
     return "Selected by LLM tiebreak (no reason recorded)."
 
 
+def _manual_rationale(decision) -> str:
+    decide = _decide_event(decision) or {}
+    kind = decide.get("match_kind", "manual")
+    sample_ref = decision.group.instances[0].reference if decision.group.instances else "?"
+    sample_value = decision.group.spec.display() if hasattr(decision.group.spec, "display") else ""
+    if kind == "by_reference":
+        key = sample_ref
+        return f"Manual override (config: `manual_lcsc.by_reference[{key!r}]`)."
+    if kind == "by_value":
+        return f"Manual override (config: `manual_lcsc.by_value[{sample_value!r}]`)."
+    return "Manual override pinned in config."
+
+
 def _rationale(decision) -> str:
+    if decision.source == "manual":
+        return _manual_rationale(decision)
     if decision.source == "single":
         return f"Only candidate after package + value filter ({len(decision.candidates)} remaining)."
     if decision.source == "score":
@@ -207,13 +222,16 @@ def _decision_section(decision) -> str:
     spec_line = _row_line(chosen_row)
     desc_line = f"- {_short_desc(chosen_row.description)}" if chosen_row.description else ""
     rationale = f"**Why this part?** {_rationale(decision)}"
-    alts_header = "**Alternatives considered**:"
-    alts = _alternatives_table(decision)
 
     parts = [header, "", chosen_block, spec_line]
     if desc_line:
         parts.append(desc_line)
-    parts.extend(["", rationale, "", alts_header, "", alts, ""])
+    parts.extend(["", rationale, ""])
+
+    if decision.source != "manual":
+        # Manual picks bypass scoring, so an "alternatives" table would be
+        # misleading — the user pinned the LCSC.
+        parts.extend(["**Alternatives considered**:", "", _alternatives_table(decision), ""])
     return "\n".join(parts)
 
 
