@@ -23,7 +23,24 @@ from ..observability.markdown_report import write_markdown_report
 
 
 def _autodetect_parts_db() -> Path:
-    return Path.home() / "Library/Application Support/kicad/9.0/3rdparty/plugins/com_github_bouni_kicad-jlcpcb-tools/jlcpcb_parts.db"
+    """Pick the first parts.db that exists on disk.
+
+    Order:
+      1. ~/.cache/jlcpcb-mapper/parts.db   — written by `jlcpcb-mapper fetch-db`
+      2. kicad-jlcpcb-tools plugin path    — when the user already has the
+         plugin installed and its DB downloaded.
+
+    Falls back to the fetch-db path even when missing so the error message
+    points users at the standalone command rather than the plugin.
+    """
+    candidates = [
+        Path.home() / ".cache/jlcpcb-mapper/parts.db",
+        Path.home() / "Library/Application Support/kicad/9.0/3rdparty/plugins/com_github_bouni_kicad-jlcpcb-tools/jlcpcb_parts.db",
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return candidates[0]
 
 
 def _build_mutator(edits):

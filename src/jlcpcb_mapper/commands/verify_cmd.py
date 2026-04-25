@@ -12,7 +12,16 @@ STATE_FILE = ".jlcpcb-mapper/last-state.json"
 
 
 def _autodetect_parts_db() -> Path:
-    return Path.home() / "Library/Application Support/kicad/9.0/3rdparty/plugins/com_github_bouni_kicad-jlcpcb-tools/jlcpcb_parts.db"
+    """Same logic as map_cmd._autodetect_parts_db: prefer the standalone
+    fetch-db output, fall back to the kicad-jlcpcb-tools plugin path."""
+    candidates = [
+        Path.home() / ".cache/jlcpcb-mapper/parts.db",
+        Path.home() / "Library/Application Support/kicad/9.0/3rdparty/plugins/com_github_bouni_kicad-jlcpcb-tools/jlcpcb_parts.db",
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return candidates[0]
 
 
 def run_verify(
