@@ -112,7 +112,7 @@ def run_map(
     # auto pipeline. Resolve those first; the pipeline will skip the
     # refs that manual claimed.
     all_lcsc_targets = select_targets(proj, fill_lcsc_only=True, include_dnp=include_dnp)
-    db_main = PartsDB(parts_db_path)
+    db = PartsDB(parts_db_path)
     manual_instances = [
         Instance(
             sch_path=t.sch_path, reference=t.inst.reference, lib_id=t.inst.lib_id,
@@ -121,7 +121,7 @@ def run_map(
         )
         for t in all_lcsc_targets
     ]
-    manual_resolution = resolve_manual_overrides(manual_instances, config.manual_lcsc, db_main)
+    manual_resolution = resolve_manual_overrides(manual_instances, config.manual_lcsc, db)
     for lcsc, refs in manual_resolution.unknown_lcscs:
         report.add_failure(
             kind="manual_unknown_lcsc",
@@ -159,7 +159,7 @@ def run_map(
     # Run pipeline
     decisions, skipped = run_pipeline(
         instances=instances,
-        db=PartsDB(parts_db_path),
+        db=db,
         llm=llm,
         hints=config.hints,
         score_tiebreak_threshold=config.score_tiebreak_threshold,

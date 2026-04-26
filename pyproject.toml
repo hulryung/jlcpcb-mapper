@@ -1,6 +1,6 @@
 [project]
 name = "jlcpcb-mapper"
-version = "0.1.0"
+version = "0.1.1"
 description = "LLM-assisted JLCPCB part mapping for KiCad schematics"
 readme = "README.md"
 license = { text = "MIT" }

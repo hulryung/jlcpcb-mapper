@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import sqlite3
+import threading
 
 @dataclass
 class PartRow:
@@ -18,14 +19,33 @@ class PartRow:
 
 COLS = "lcsc, category, mfr, mfr_part, package, description, basic, preferred, stock, price"
 
+
 class PartsDB:
+    """Thread-safe parts.db reader.
+
+    The pipeline fans out per-group queries across a ThreadPoolExecutor.
+    sqlite3 connections opened with `check_same_thread=False` permit
+    cross-thread *use* but the connection's internal state is NOT safe
+    against concurrent execute() calls — Python 3.14 hardened this and
+    raises `sqlite3.InterfaceError: bad parameter or other API misuse`
+    when threads collide. We hold a one-connection-per-thread cache so
+    each worker gets its own sqlite handle.
+    """
+
     def __init__(self, path: str | Path):
         self.path = Path(path)
-        self._conn = sqlite3.connect(str(self.path), check_same_thread=False)
-        self._conn.row_factory = sqlite3.Row
+        self._local = threading.local()
+
+    def _conn(self) -> sqlite3.Connection:
+        c = getattr(self._local, "conn", None)
+        if c is None:
+            c = sqlite3.connect(str(self.path))
+            c.row_factory = sqlite3.Row
+            self._local.conn = c
+        return c
 
     def get(self, lcsc: str) -> PartRow | None:
-        cur = self._conn.execute(f"SELECT {COLS} FROM parts WHERE lcsc = ?", (lcsc,))
+        cur = self._conn().execute(f"SELECT {COLS} FROM parts WHERE lcsc = ?", (lcsc,))
         r = cur.fetchone()
         return PartRow(**dict(r)) if r else None
 
@@ -47,5 +67,5 @@ class PartsDB:
             f"ORDER BY {q.order_by} LIMIT ?"
         )
         args.append(q.limit)
-        cur = self._conn.execute(sql, args)
+        cur = self._conn().execute(sql, args)
         return [PartRow(**dict(r)) for r in cur.fetchall()]
