@@ -45,7 +45,7 @@ KiCad 스키매틱의 **풋프린트 안 정해진 심볼을 JLCPCB 부품(LCSC)
 - [Claude Code CLI](https://docs.claude.com/en/docs/claude-code) (`claude`)가
   `PATH`에 있어야 함. tiebreak에 사용하며, 없어도 score path만으로 동작은
   하지만 정확도가 떨어집니다.
-- Python 3.12+, `uv` 또는 `pipx`.
+- Python 3.11+, `uv` 또는 `pipx`.
 
 ## 설치
 

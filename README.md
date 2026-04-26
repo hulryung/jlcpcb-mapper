@@ -55,7 +55,7 @@ Manual overrides bypass the pipeline entirely — see [Manual overrides](#manual
 - [Claude Code CLI](https://docs.claude.com/en/docs/claude-code) (`claude`)
   on `PATH`. Used for tiebreaks; the pipeline still runs without it
   (deterministic score path only) but quality will drop.
-- Python 3.12+ and `uv` or `pipx` for installation.
+- Python 3.11+ and `uv` or `pipx` for installation.
 
 ## Install
 
